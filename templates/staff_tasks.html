@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My tasks | Florence Court</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/staff_portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    <style>
+        .staff-task-page{width:min(900px,calc(100% - 30px));margin:48px auto}
+        .task-card{margin-bottom:12px;padding:16px;border:1px solid var(--admin-border);border-radius:10px}
+        .task-card-heading{display:flex;justify-content:space-between;gap:12px}
+        .task-card h3{margin:0;font-size:15px}
+        .task-card p{white-space:pre-wrap}
+        .task-meta{font-size:12px}
+        .staff-status-form{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+        .staff-status-form select{min-height:38px;padding:7px;border:1px solid var(--admin-border);border-radius:7px}
+        .staff-status-form button{min-height:38px;padding:7px 12px;border:0;border-radius:7px;background:var(--admin-blue);color:#fff;font:inherit;cursor:pointer}
+        @media(max-width:540px){.staff-task-page{margin:25px auto}.staff-status-form{align-items:stretch;flex-direction:column}}
+    </style>
+</head>
+<body>
+    <header class="admin-topbar staff-portal-header">
+        <a class="admin-brand" href="{{ url_for('tasks') }}"><img src="{{ url_for('static', filename='img/logo.jpg') }}" alt=""><span><strong>Florence Court</strong><small>Staff portal</small></span></a>
+        <nav class="staff-portal-actions" aria-label="Staff portal navigation">
+            <a href="{{ url_for('staff_results') }}">Course results</a>
+            <a href="{{ url_for('staff_library') }}">E-library uploads</a>
+            <span class="staff-portal-user">{{ staff.full_name }}</span>
+            <a class="staff-portal-logout" href="{{ url_for('logout1') }}">Log out</a>
+        </nav>
+    </header>
+    <main class="staff-task-page">
+        <header class="admin-page-heading"><div><p class="admin-eyebrow">STAFF PORTAL</p><h1>My tasks</h1><p>Review assigned work and keep its status up to date.</p></div></header>
+        <div class="admin-flashes" aria-live="polite">
+            {% for category, message in get_flashed_messages(with_categories=true) %}<div class="admin-alert {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><h2>Your assignments</h2><span class="admin-badge">{{ assigned_tasks|length }} total</span></div>
+            {% if assigned_tasks %}
+            {% for task in assigned_tasks %}
+            <article class="task-card">
+                <div class="task-card-heading"><h3>{{ task.title }}</h3><span class="admin-badge {{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else '' }}">{{ task.status|replace('_', ' ')|title }}</span></div>
+                <p>{{ task.description }}</p>
+                <div class="admin-muted task-meta">{% if task.due_date %}Due {{ task.due_date.strftime('%b %d, %Y') }}{% else %}No due date{% endif %} · Created {{ task.created_at.strftime('%b %d, %Y') }}</div>
+                <form class="staff-status-form" method="post" action="{{ url_for('update_task_status', task_id=task.id) }}">
+                    <label for="status-{{ task.id }}">Update status</label>
+                    <select id="status-{{ task.id }}" name="status" aria-label="Status for {{ task.title }}">
+                        <option value="pending" {{ 'selected' if task.status == 'pending' else '' }}>Pending</option>
+                        <option value="in_progress" {{ 'selected' if task.status == 'in_progress' else '' }}>In progress</option>
+                        <option value="completed" {{ 'selected' if task.status == 'completed' else '' }}>Completed</option>
+                    </select>
+                    <button type="submit">Save status</button>
+                </form>
+            </article>
+            {% endfor %}
+            {% else %}<div class="admin-empty">You have no assigned tasks yet.</div>{% endif %}
+        </section>
+    </main>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden><span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span></div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "student_portal_base.html" %}
+{% block page_title %}Passport photo{% endblock %}
+{% block breadcrumb %}Passport photo{% endblock %}
+{% block content %}
+<header class="invoice-page-heading">
+    <div><span class="eyebrow">STUDENT PROFILE</span><h1>Passport photo</h1><p>View or upload the photo associated with your student record.</p></div>
+    <a class="button button-outline" href="{{ url_for('Biodata') }}">Back to biodata <span>→</span></a>
+</header>
+<section class="student-page-card passport-card">
+    <div class="passport-preview">
+        <img src="{{ passport_url }}" alt="Your student passport photo">
+        <div><strong>{{ student.firstName }} {{ student.lastName }}</strong><span>{{ student.entry_class }} · {{ student.admission_id }}</span></div>
+    </div>
+    <form class="student-form" method="post" action="{{ url_for('passport') }}" enctype="multipart/form-data">
+        <label for="passport">Choose a replacement photo</label>
+        <input id="passport" name="passport" type="file" accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif" required>
+        <small>Accepted formats: JPG, PNG, or GIF.</small>
+        <button class="button invoice-pay-button" type="submit">Upload photo</button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#142d4e">
+    <title>Check admission status | Florence Court</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account_pages.css') }}">
+</head>
+<body>
+    <main class="account-shell">
+        <section class="account-brand-panel">
+            <a class="account-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+                <span><strong>Florence Court</strong><small>International Schools</small></span>
+            </a>
+            <div class="account-brand-copy">
+                <span class="account-eyebrow">ADMISSIONS</span>
+                <h1>Your next chapter starts here.</h1>
+                <p>Check the latest update on your application using the session and details you submitted.</p>
+            </div>
+            <span class="account-brand-footer">Ado-Ekiti · Ekiti State</span>
+        </section>
+        <section class="account-form-panel">
+            <div class="account-form-card">
+                <a class="account-back-link" href="{{ url_for('index') }}">← Back to school home</a>
+                <span class="account-eyebrow account-eyebrow-dark">APPLICATION TRACKER</span>
+                <h2>Check your admission status</h2>
+                <p class="account-intro">Enter the school session and either your application reference number or the email used on your application.</p>
+                <div class="account-messages" role="status" aria-live="polite">
+                    {% for category, message in get_flashed_messages(with_categories=true) %}
+                    <div class="account-message account-message-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                <form method="post" action="{{ url_for('checkadmin') }}">
+                    <label for="entry-session">Application session</label>
+                    <select id="entry-session" name="entry_session" required>
+                        <option value="">Select session</option>
+                        {% for session_name in school_sessions %}
+                        <option value="{{ session_name }}" {{ 'selected' if session_name == selected_session else '' }}>{{ session_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="lookup">Application reference or email</label>
+                    <input id="lookup" name="lookup" type="text" autocomplete="on" placeholder="5-digit reference or email address" required>
+                    <button class="account-submit" type="submit">Check application <span aria-hidden="true">→</span></button>
+                </form>
+                <p class="account-help">Your application reference is the five-digit number shown when you submitted the form. If you can’t find it, use the email address on the application.</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

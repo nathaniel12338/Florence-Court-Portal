@@ -723,7 +723,7 @@ body {
 }
 
 .library-table-name span.info {
-    background-color: #5887ff
+    background-color: #e9a820
 }
 
 .library-table-name span.danger {
@@ -831,17 +831,17 @@ button.disabled:focus {
 }
 
 .primary-default-btn {
-    background-color: #2f49d1;
+    background-color: #e9a820;
     color: #fff
 }
 
 .primary-default-btn:hover {
-    background-color: #4661f0;
+    background-color: #e9a820;
     color: #fff
 }
 
 .primary-white-btn,.secondary-default-btn {
-    color: #2f49d1
+    color: #e9a820
 }
 
 .primary-white-btn {
@@ -852,11 +852,11 @@ button.disabled:focus {
 }
 
 .primary-white-btn:hover {
-    color: #4661f0
+    color: #e9a820
 }
 
 .secondary-default-btn {
-    border: 2px solid #2f49d1;
+    border: 2px solid #e9a820;
     background-color: transparent
 }
 
@@ -878,7 +878,7 @@ button.disabled:focus {
     border-radius: 4px;
     font-size: 16px;
     line-height: 1.5;
-    color: #2f49d1
+    color: #e9a820
 }
 
 .sidebar-toggle {
@@ -1036,11 +1036,11 @@ button.disabled:focus {
     -ms-flex-pack: center;
     justify-content: center;
     text-align: center;
-    color: #5f2eea
+    color: #e9a820
 }
 
 .upgrade-btn:hover {
-    color: #5f2eea;
+    color: #e9a820;
     background: rgba(0,97,247,.15)
 }
 
@@ -1073,13 +1073,13 @@ button.disabled:focus {
 }
 
 .link-info {
-    color: #5887ff;
+    color: #e9a820;
     border-bottom: dashed 1px transparent
 }
 
 .link-info:hover {
-    color: #5887ff;
-    border-bottom-color: #5887ff
+    color: #e9a820;
+    border-bottom-color: #e9a820
 }
 
 .dropdown {

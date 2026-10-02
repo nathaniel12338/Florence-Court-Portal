@@ -1,0 +1,56 @@
+.page-loading[hidden] {
+    display: none;
+}
+
+.page-loading {
+    position: fixed;
+    z-index: 9999;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgb(16 35 58 / 42%);
+    color: #fff;
+    font: 600 14px/1.4 Arial, sans-serif;
+    backdrop-filter: blur(2px);
+}
+
+.page-loading-spinner,
+.button-loading-spinner {
+    width: 21px;
+    height: 21px;
+    flex: 0 0 auto;
+    border: 3px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: loading-spin .7s linear infinite;
+}
+
+.button-loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.button-loading-spinner {
+    width: 15px;
+    height: 15px;
+    border-width: 2px;
+}
+
+button[aria-busy="true"] {
+    cursor: wait;
+    opacity: .78;
+}
+
+@keyframes loading-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-loading-spinner,
+    .button-loading-spinner {
+        animation-duration: 1.8s;
+    }
+}

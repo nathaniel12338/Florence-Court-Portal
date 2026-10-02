@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#142d4e">
+    <title>{% block title %}Administration{% endblock %} | Florence Court</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="admin-topbar">
+        <a class="admin-brand" href="{{ url_for('Adminpage') }}">
+            <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+            <span><strong>Florence Court</strong><small>School administration</small></span>
+        </a>
+        <div class="admin-top-actions">
+            <a href="{{ url_for('index') }}">View school site</a>
+            <a href="{{ url_for('logout1') }}">Log out</a>
+        </div>
+    </header>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <nav class="admin-nav" aria-label="Admin navigation">
+                <span class="nav-label">Workspace</span>
+                <a class="{{ 'active' if active_page|default('') == 'dashboard' else '' }}" href="{{ url_for('Adminpage') }}">Overview</a>
+                <a class="{{ 'active' if active_page|default('') == 'admissions' else '' }}" href="{{ url_for('Adminlist') }}">Admissions</a>
+                <a class="{{ 'active' if active_page|default('') == 'students' else '' }}" href="{{ url_for('student_management') }}">Students</a>
+                <a class="{{ 'active' if active_page|default('') == 'timetable' else '' }}" href="{{ url_for('table1') }}">Timetable</a>
+                <a class="{{ 'active' if active_page|default('') == 'courses' else '' }}" href="{{ url_for('course_management') }}">Courses &amp; teachers</a>
+                <a class="{{ 'active' if active_page|default('') == 'results' else '' }}" href="{{ url_for('datatable') }}">Course results</a>
+                <a class="{{ 'active' if active_page|default('') == 'fees' else '' }}" href="{{ url_for('fee_management') }}">Student fees</a>
+                <span class="nav-label">People</span>
+                <a class="{{ 'active' if active_page|default('') == 'staff' else '' }}" href="{{ url_for('staff_management') }}">Staff accounts</a>
+                <a class="{{ 'active' if active_page|default('') == 'tasks' else '' }}" href="{{ url_for('tasks') }}">Staff tasks</a>
+            </nav>
+        </aside>
+        <main class="admin-main">
+            <div class="admin-flashes" aria-live="polite">
+                {% for category, message in get_flashed_messages(with_categories=true) %}
+                <div class="admin-alert {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <footer class="admin-footer">Florence Court International Schools · Administration</footer>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden>
+        <span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span>
+    </div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

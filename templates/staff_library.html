@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Upload learning materials | Florence Court</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/staff_portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    <style>
+        .staff-library-page{width:min(1000px,calc(100% - 32px));margin:36px auto}
+        .library-upload-form{max-width:700px}
+        .library-resources{margin-top:20px}
+        @media(max-width:540px){.staff-library-page{margin:22px auto}.admin-panel{padding:16px}}
+    </style>
+</head>
+<body>
+    <header class="admin-topbar staff-portal-header">
+        <a class="admin-brand" href="{{ url_for('tasks') }}"><img src="{{ url_for('static', filename='img/logo.jpg') }}" alt=""><span><strong>Florence Court</strong><small>Staff portal</small></span></a>
+        <nav class="staff-portal-actions" aria-label="Staff portal navigation">
+            <a href="{{ url_for('tasks') }}">My tasks</a>
+            <a href="{{ url_for('staff_results') }}">Course results</a>
+            <span class="staff-portal-user">{{ staff.full_name }}</span>
+            <a class="staff-portal-logout" href="{{ url_for('logout1') }}">Log out</a>
+        </nav>
+    </header>
+    <main class="staff-library-page">
+        <header class="admin-page-heading"><div><p class="admin-eyebrow">STAFF PORTAL</p><h1>E-library materials</h1><p>Upload a course PDF and select the class that should have access to it.</p></div></header>
+        <div class="admin-flashes" aria-live="polite">
+            {% for category, message in get_flashed_messages(with_categories=true) %}<div class="admin-alert {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><h2>Upload PDF for a class</h2></div>
+            <form class="admin-form library-upload-form" method="post" enctype="multipart/form-data" action="{{ url_for('staff_library') }}">
+                <div><label for="library-class">Class</label><select id="library-class" name="class_name" required><option value="">Choose class</option>{% for class_name in classes %}<option value="{{ class_name }}">{{ class_name }}</option>{% endfor %}</select></div>
+                <div><label for="course-title">Course title</label><input id="course-title" name="course_title" maxlength="120" placeholder="e.g. Mathematics — Fractions" required></div>
+                <div><label for="library-description">Short note (optional)</label><textarea id="library-description" name="description" maxlength="1000" placeholder="Tell students what this material covers"></textarea></div>
+                <div><label for="library-pdf">PDF document</label><input id="library-pdf" name="pdf" type="file" accept=".pdf,application/pdf" required><small class="admin-muted">PDF files only.</small></div>
+                <button class="admin-button" type="submit">Upload for selected class</button>
+            </form>
+        </section>
+        <section class="admin-panel library-resources">
+            <div class="admin-panel-heading"><h2>My uploaded materials</h2><span class="admin-badge">{{ resources|length }} PDFs</span></div>
+            {% if resources %}
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Course title</th><th>Class</th><th>Added</th><th>File</th></tr></thead><tbody>
+                {% for resource in resources %}
+                <tr><td><strong>{{ resource.course_title }}</strong>{% if resource.description %}<br><span class="admin-muted">{{ resource.description }}</span>{% endif %}</td><td>{{ resource.class_name }}</td><td>{{ resource.uploaded_at.strftime('%b %d, %Y') }}</td><td><a href="{{ url_for('download_library_resource', resource_id=resource.id) }}">Download PDF</a></td></tr>
+                {% endfor %}
+            </tbody></table></div>
+            {% else %}
+            <div class="admin-empty">You have not uploaded any learning materials yet.</div>
+            {% endif %}
+        </section>
+    </main>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden><span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span></div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+</body>
+</html>

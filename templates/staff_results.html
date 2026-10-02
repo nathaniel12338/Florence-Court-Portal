@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Class results | Florence Court</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/staff_portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    <style>
+        .staff-results-page{width:min(1200px,calc(100% - 30px));margin:38px auto}
+        .result-filters{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-bottom:18px}
+        .result-filters label{display:grid;gap:5px;color:#42536a;font-size:12px;font-weight:650}
+        .result-filters select{min-width:160px;min-height:39px;padding:7px 10px;border:1px solid var(--admin-border);border-radius:7px;background:#fff;font:inherit}
+        .marksheet-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+        .marksheet-actions p{margin:0;color:var(--admin-muted);font-size:12px}
+        .mark-input{width:94px;min-height:38px;padding:6px 8px;border:1px solid var(--admin-border);border-radius:7px;font:inherit}
+        .ca-inputs{display:flex;align-items:end;gap:8px}
+        .ca-input{display:grid;gap:4px;color:#738197;font-size:10px;font-weight:700}
+        .ca-input .mark-input{width:78px}
+        .score-total,.score-grade{font-weight:750;color:var(--admin-navy);white-space:nowrap}
+        .score-table th{text-align:center}
+        .score-table th:nth-child(2){text-align:left}
+        .result-state{margin:0 0 14px}
+        .score-table td{vertical-align:middle}
+        .result-help{margin:0 0 15px;color:var(--admin-muted);font-size:12px}
+        .approved-note{padding:12px 14px;border:1px solid #cfe8da;border-radius:8px;background:#eef8f2;color:#22603c}
+        @media(max-width:540px){.staff-results-page{margin:22px auto}.ca-inputs{gap:5px}.ca-input .mark-input{width:68px}}
+    </style>
+</head>
+<body>
+    <header class="admin-topbar staff-portal-header">
+        <a class="admin-brand" href="{{ url_for('staff_results') }}"><img src="{{ url_for('static', filename='img/logo.jpg') }}" alt=""><span><strong>Florence Court</strong><small>Staff portal</small></span></a>
+        <nav class="staff-portal-actions" aria-label="Staff portal navigation">
+            <a href="{{ url_for('tasks') }}">My tasks</a>
+            <a href="{{ url_for('staff_library') }}">E-library uploads</a>
+            <span class="staff-portal-user">{{ staff.full_name }}</span>
+            <a class="staff-portal-logout" href="{{ url_for('logout1') }}">Log out</a>
+        </nav>
+    </header>
+    <main class="staff-results-page">
+        <header class="admin-page-heading">
+            <div><p class="admin-eyebrow">ACADEMICS · STAFF PORTAL</p><h1>Class results</h1><p>Choose one of your assigned classes and courses to enter marks for its student roster.</p></div>
+            <a class="admin-button secondary" href="{{ url_for('tasks') }}">My tasks</a>
+        </header>
+        <div class="admin-flashes" aria-live="polite">
+            {% for category, message in get_flashed_messages(with_categories=true) %}<div class="admin-alert {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+        {% if courses %}
+        <form class="result-filters" method="get" action="{{ url_for('staff_results') }}">
+            <label>Class
+                <select id="class-select" required>
+                    <option value="">Select class</option>
+                    {% for class_option in available_classes %}
+                    <option value="{{ class_option.key }}" {% if selected_course and class_option.key == selected_course.class_key %}selected{% endif %}>{{ class_option.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Assigned course
+                <select id="course-select" required>
+                    <option value="">Select term and course</option>
+                    {% for course in courses %}
+                    <option value="{{ loop.index0 }}" data-class="{{ course.class_key }}" data-term="{{ course.term }}" data-subject="{{ course.subject }}" data-id="{{ course.timetable_id }}" {% if selected_course and course.class_key == selected_course.class_key and course.term == selected_course.term and course.subject == selected_course.subject %}selected{% endif %}>{{ course.term|title }} term · {{ course.subject }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="class" id="selected-class">
+            <input type="hidden" name="term" id="selected-term">
+            <input type="hidden" name="subject" id="selected-subject">
+            <button class="admin-button" type="submit">View student roster</button>
+        </form>
+        {% else %}
+        <section class="admin-panel"><div class="admin-empty">You do not have any timetable courses assigned. Ask an administrator to assign your class and subject first.</div></section>
+        {% endif %}
+        {% if selected_course %}
+        <section class="admin-panel">
+            <div class="admin-panel-heading">
+                <div><h2>{{ selected_course.class_name }} · {{ selected_course.subject }}</h2><p class="admin-muted">{{ selected_course.term|title }} term · {{ students|length }} students</p></div>
+                {% if result_approved %}<span class="admin-badge success">Approved and locked</span>{% elif course_complete %}<span class="admin-badge success">Ready for admin approval</span>{% else %}<span class="admin-badge warning">Marks in progress</span>{% endif %}
+            </div>
+            {% if result_approved %}
+            <div class="approved-note">{{ selected_course.subject }} marks for {{ selected_course.class_name }} have been approved by the administrator. Only this course is locked; other subjects remain editable.</div>
+            {% elif students %}
+            <p class="result-help">Enter the course marks for each student below. There is no maximum score cap. Every student must have an exam mark and at least one CA mark before the course marksheet can be submitted for admin review.</p>
+            <form method="post" action="{{ url_for('save_course_results', class_name=selected_course.class_key, timetable_id=selected_course.timetable_id) }}">
+                <div class="marksheet-actions">
+                    <p>Grade calculated automatically from total: Excellent 80+, Very Good 70–79, Good 60–69, Pass 50–59, Fail below 50.</p>
+                    <button class="admin-button" type="submit">Submit completed marksheet</button>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table score-table">
+                        <thead><tr><th>#</th><th>Student</th><th>Admission number</th><th>CA scores</th><th>Exam</th><th>Total</th><th>Grade</th></tr></thead>
+                        <tbody>
+                        {% for student in students %}
+                            {% set grade = grades_by_student.get(student.id) %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ student.firstName }} {{ student.lastName }}</strong></td>
+                                <td>{{ student.admission_id }}</td>
+                                <td>
+                                    <div class="ca-inputs">
+                                        <label class="ca-input">CA 1<input class="mark-input" type="number" name="ca1_score_{{ student.id }}" min="0" step="0.01" value="{{ grade.ca1_score|score if grade and grade.ca1_score is not none else '' }}" aria-label="CA 1 mark for {{ student.firstName }} {{ student.lastName }}"></label>
+                                        <label class="ca-input">CA 2<input class="mark-input" type="number" name="ca2_score_{{ student.id }}" min="0" step="0.01" value="{{ grade.ca2_score|score if grade and grade.ca2_score is not none else '' }}" aria-label="CA 2 mark for {{ student.firstName }} {{ student.lastName }}"></label>
+                                        <label class="ca-input">CA 3<input class="mark-input" type="number" name="ca3_score_{{ student.id }}" min="0" step="0.01" value="{{ grade.ca3_score|score if grade and grade.ca3_score is not none else '' }}" aria-label="CA 3 mark for {{ student.firstName }} {{ student.lastName }}"></label>
+                                    </div>
+                                </td>
+                                <td><input class="mark-input score-input" type="number" name="exam_score_{{ student.id }}" min="0" step="0.01" value="{{ grade.exam_score|score if grade and grade.exam_score is not none else '' }}" aria-label="Exam mark for {{ student.firstName }} {{ student.lastName }}"></td>
+                                <td class="score-total">{{ grade.total_score|score if grade and grade.total_score is not none else '—' }}</td>
+                                <td class="score-grade">{{ grade.total_score|result_grade if grade and grade.total_score is not none else '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            {% else %}
+            <div class="admin-empty">No admitted students are assigned to {{ selected_course.class_name }} yet.</div>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+    <script>
+        const classSelect = document.getElementById('class-select');
+        const courseSelect = document.getElementById('course-select');
+        document.querySelectorAll('.score-table tbody tr').forEach((row) => {
+            const inputs = row.querySelectorAll('.mark-input');
+            const total = row.querySelector('.score-total');
+            const updateTotal = () => {
+                const values = [...inputs].map((input) => input.value.trim())
+                    .filter((value) => value !== '')
+                    .map(Number);
+                if (!values.length) {
+                    total.textContent = '—';
+                    row.querySelector('.score-grade').textContent = '—';
+                    return;
+                }
+                const sum = values.reduce((result, value) => result + value, 0);
+                const roundedTotal = Number(sum.toFixed(2));
+                total.textContent = Number.isInteger(roundedTotal) ? String(roundedTotal) : String(roundedTotal);
+                row.querySelector('.score-grade').textContent = roundedTotal >= 80
+                    ? 'Excellent'
+                    : roundedTotal >= 70
+                        ? 'Very Good'
+                        : roundedTotal >= 60
+                            ? 'Good'
+                            : roundedTotal >= 50
+                                ? 'Pass'
+                                : 'Fail';
+            };
+            inputs.forEach((input) => input.addEventListener('input', updateTotal));
+        });
+        if (courseSelect) {
+            const filterCourses = () => {
+                const selectedClass = classSelect.value;
+                let hasSelection = false;
+                for (const option of courseSelect.options) {
+                    if (!option.value) continue;
+                    option.hidden = option.dataset.class !== selectedClass;
+                    if (option.selected && option.hidden) option.selected = false;
+                    if (option.selected && !option.hidden) hasSelection = true;
+                }
+                if (!hasSelection) courseSelect.value = '';
+            };
+            classSelect.addEventListener('change', filterCourses);
+            filterCourses();
+            courseSelect.addEventListener('change', () => {
+                const option = courseSelect.selectedOptions[0];
+                if (!option || !option.value) return;
+                document.getElementById('selected-class').value = option.dataset.class;
+                document.getElementById('selected-term').value = option.dataset.term;
+                document.getElementById('selected-subject').value = option.dataset.subject;
+                courseSelect.form.requestSubmit();
+            });
+        }
+    </script>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden><span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span></div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+</body>
+</html>

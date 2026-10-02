@@ -1,0 +1,173 @@
+{% extends "admin_base.html" %}
+{% block title %}Timetable{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div><p class="admin-eyebrow">ACADEMICS</p><h1>Timetable &amp; class assignments</h1><p>Filter a class to review its student roster and published lessons, then assign courses to teachers.</p></div>
+</header>
+{% if not staff_names %}
+<div class="admin-alert warning">Add active staff accounts before publishing timetable lessons. <a href="{{ url_for('staff_management') }}">Manage staff</a></div>
+{% endif %}
+<section class="admin-panel roster-panel">
+    <div class="admin-panel-heading">
+        <div><h2>Class roster and timetable</h2><p class="admin-muted">Choose a class and term to see enrolled students and published lessons.</p></div>
+        <span class="admin-badge">{{ selected_students|length }} students</span>
+    </div>
+    <form class="roster-filters" method="get" action="{{ url_for('table1') }}">
+        <label for="roster-class">Class
+            <select id="roster-class" name="class" required>
+                <option value="">Select class</option>
+                {% for class_key, class_label in school_classes.items() %}
+                <option value="{{ class_key }}" {{ 'selected' if class_key == selected_class else '' }}>{{ class_label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label for="roster-term">Term
+            <select id="roster-term" name="term">
+                {% for term in ['first', 'second', 'third'] %}
+                <option value="{{ term }}" {{ 'selected' if term == selected_term else '' }}>{{ term|title }} term</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="admin-button" type="submit">View class</button>
+    </form>
+    {% if selected_class %}
+    <div class="roster-content">
+        <div class="roster-list">
+            <h3>{{ school_classes[selected_class] }} student roster</h3>
+            {% if selected_students %}
+            <div class="roster-students">
+                {% for student in selected_students %}
+                <div><strong>{{ student.firstName }} {{ student.lastName }}</strong><span>{{ student.admission_id }}</span></div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="admin-empty">No admitted students are currently enrolled in this class.</div>
+            {% endif %}
+        </div>
+        <div class="published-lessons">
+            <h3>{{ selected_term|title }} term lessons</h3>
+            {% if timetable_entries %}
+            <div class="admin-table-wrap"><table class="admin-table">
+                <thead><tr><th>Course</th><th>Teacher</th><th>Date</th><th>Time</th></tr></thead>
+                <tbody>{% for lesson in timetable_entries %}<tr><td><strong>{{ lesson.subject }}</strong></td><td>{{ lesson.techername }}</td><td>{{ lesson.date.strftime('%b %d, %Y') }}</td><td>{{ lesson.time.strftime('%I:%M %p') }}</td></tr>{% endfor %}</tbody>
+            </table></div>
+            {% else %}<div class="admin-empty">No lessons published for this class and term yet.</div>{% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="admin-empty">Select a class above to view its roster and current timetable.</div>
+    {% endif %}
+</section>
+<section class="admin-panel assignment-panel">
+    <div class="admin-panel-heading"><div><h2>Assign a teacher to multiple classes</h2><p class="admin-muted">Choose the teacher, subject and classes once. A lesson entry will be created for each selected class.</p></div></div>
+    <form class="admin-form" method="post" action="{{ url_for('table1') }}">
+        <input type="hidden" name="action" value="assign_multiple_classes">
+        <div class="admin-grid">
+            <div><label for="assignment-teacher">Teacher</label><select id="assignment-teacher" name="teacher" required><option value="">Select teacher</option>{% for staff_name in staff_names %}<option value="{{ staff_name }}">{{ staff_name }}</option>{% endfor %}</select></div>
+            <div><label for="assignment-subject">Course</label><input id="assignment-subject" name="subject" list="course-options" maxlength="100" placeholder="Choose or type a course" required></div>
+            <div><label for="assignment-term">Term</label><select id="assignment-term" name="term" required><option value="">Select term</option><option value="first">First term</option><option value="second">Second term</option><option value="third">Third term</option></select></div>
+            <div><label for="assignment-date">Lesson date</label><input id="assignment-date" name="date" type="date" required></div>
+            <div><label for="assignment-time">Lesson time</label><input id="assignment-time" name="time" type="time" required></div>
+        </div>
+        <fieldset class="class-assignment-choices">
+            <legend>Classes for this teacher and subject</legend>
+            <div class="class-assignment-grid">
+                {% for class_key, class_label in [('jss1', 'JSS 1'), ('jss2', 'JSS 2'), ('jss3', 'JSS 3'), ('sss1', 'SSS 1'), ('sss2', 'SSS 2')] %}
+                <label><input type="checkbox" name="classes[]" value="{{ class_key }}"><span>{{ class_label }}</span></label>
+                {% endfor %}
+            </div>
+            <small>Use this for the same subject taught by the same teacher at the same time across the selected classes.</small>
+        </fieldset>
+        <button class="admin-button" type="submit" {% if not staff_names %}disabled{% endif %}>Assign selected classes</button>
+    </form>
+</section>
+<section class="admin-panel">
+    <div class="admin-panel-heading"><div><h2>Add individual timetable lessons</h2><p class="admin-muted">Use this when each lesson needs a different subject, teacher, date or time.</p></div></div>
+    <form class="admin-form" method="post" action="{{ url_for('table1') }}">
+        <div class="admin-grid">
+            <div><label for="class-select">Class</label><select id="class-select" name="classe" required><option value="">Select class</option><option value="jss1">JSS 1</option><option value="jss2">JSS 2</option><option value="jss3">JSS 3</option><option value="sss1">SSS 1</option><option value="sss2">SSS 2</option></select></div>
+            <div><label for="term-select">Term</label><select id="term-select" name="term" required><option value="">Select term</option><option value="first">First term</option><option value="second">Second term</option><option value="third">Third term</option></select></div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table timetable-table">
+                <thead><tr><th>Subject</th><th>Teacher</th><th>Date</th><th>Time</th></tr></thead>
+                <tbody id="data-rows">
+                    <tr>
+                        <td><input type="text" name="subject[]" list="course-options" maxlength="100" placeholder="Select or type a course" required></td>
+                        <td><select name="techername[]" required><option value="">Select staff</option>{% for staff_name in staff_names %}<option value="{{ staff_name }}">{{ staff_name }}</option>{% endfor %}</select></td>
+                        <td><input type="date" name="date[]" required></td>
+                        <td><input type="time" name="time[]" required></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <template id="staff-options">{% for staff_name in staff_names %}<option value="{{ staff_name }}">{{ staff_name }}</option>{% endfor %}</template>
+        <div class="admin-actions">
+            <button class="admin-button secondary" type="button" id="add-row-btn" {% if not staff_names %}disabled{% endif %}>Add lesson</button>
+            <button class="admin-button" type="submit" {% if not staff_names %}disabled{% endif %}>Publish timetable</button>
+        </div>
+    </form>
+</section>
+<datalist id="course-options">{% for course in course_options %}<option value="{{ course }}">{% endfor %}</datalist>
+{% endblock %}
+{% block head %}
+<style>
+.roster-panel{margin-bottom:20px}
+.roster-filters{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-bottom:17px}
+.roster-filters label{display:grid;gap:5px;color:#3f5066;font-size:12px;font-weight:650}
+.roster-filters select{min-width:175px;min-height:40px;padding:8px 10px;border:1px solid #d7e0ea;border-radius:8px;background:#fff;color:var(--admin-ink);font:inherit}
+.roster-content{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:18px}
+.roster-list h3,.published-lessons h3{margin:0 0 10px;color:var(--admin-navy);font-size:14px}
+.roster-students{max-height:350px;overflow:auto;border:1px solid var(--admin-border);border-radius:9px}
+.roster-students>div{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid #edf0f4;font-size:12px}
+.roster-students>div:last-child{border:0}
+.roster-students span{color:var(--admin-muted)}
+.assignment-panel{margin-bottom:20px}
+.class-assignment-choices{margin:2px 0 0;padding:14px;border:1px solid var(--admin-border);border-radius:10px}
+.class-assignment-choices legend{padding:0 6px;color:var(--admin-navy);font-size:12px;font-weight:700}
+.class-assignment-grid{display:flex;flex-wrap:wrap;gap:9px}
+.class-assignment-grid label{display:flex;min-width:100px;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--admin-border);border-radius:8px;cursor:pointer}
+.class-assignment-grid input{accent-color:var(--admin-blue)}
+.class-assignment-choices small{display:block;margin-top:11px;color:var(--admin-muted);font-size:11px}
+.timetable-table select,.timetable-table input{width:100%;min-width:125px;min-height:39px;padding:7px;border:1px solid #d7e0ea;border-radius:7px;background:#fff;color:#192b43;font:inherit}
+.timetable-table td{min-width:140px}
+.admin-button:disabled{cursor:not-allowed;opacity:.5}
+@media(max-width:760px){.roster-content{grid-template-columns:1fr}.roster-filters label{flex:1 1 160px}.roster-filters button{width:100%}}
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.getElementById('add-row-btn').addEventListener('click', function () {
+        const tableBody = document.getElementById('data-rows');
+        const newRow = document.createElement('tr');
+        const subjectCell = document.createElement('td');
+        const subject = document.createElement('input');
+        subject.type = 'text';
+        subject.name = 'subject[]';
+        subject.maxLength = 100;
+        subject.placeholder = 'Subject';
+        subject.required = true;
+        subjectCell.append(subject);
+
+        const staffCell = document.createElement('td');
+        const teacher = document.createElement('select');
+        teacher.name = 'techername[]';
+        teacher.required = true;
+        teacher.add(new Option('Select staff', ''));
+        teacher.append(document.getElementById('staff-options').content.cloneNode(true));
+        staffCell.append(teacher);
+
+        newRow.append(subjectCell, staffCell);
+        [['date', 'date[]'], ['time', 'time[]']].forEach(([type, name]) => {
+            const cell = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = type;
+            input.name = name;
+            input.required = true;
+            cell.append(input);
+            newRow.append(cell);
+        });
+        tableBody.appendChild(newRow);
+    });
+</script>
+{% endblock %}

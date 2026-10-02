@@ -1,0 +1,69 @@
+{% extends "student_portal_base.html" %}
+{% block page_title %}My results{% endblock %}
+{% block breadcrumb %}My results{% endblock %}
+{% block content %}
+<header class="invoice-page-heading">
+    <div><span class="eyebrow">ACADEMIC RECORD</span><h1>My results</h1><p>Only results approved by the school administrator are shown here.</p></div>
+    <div class="invoice-count-card"><span class="invoice-count-icon">▤</span><span><small>Approved reports</small><strong>{{ reports|length }}</strong></span></div>
+</header>
+{% if term_options %}
+<form class="result-term-filter" method="get" action="{{ url_for('student_results') }}">
+    <label for="result-term">Select term results</label>
+    <select id="result-term" name="term">
+        <option value="all" {{ 'selected' if selected_term == 'all' else '' }}>All approved terms</option>
+        {% for term in term_options %}
+        <option value="{{ term }}" {{ 'selected' if selected_term == term else '' }}>{{ term|title }} term</option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %}
+{% if reports %}
+    <section class="student-report-panel">
+        <div class="student-report-heading"><div><span class="eyebrow">ACADEMIC RECORD</span><h2>Approved course results</h2><p>{{ reports|length }} approved course report{{ '' if reports|length == 1 else 's' }}{% if selected_term != 'all' %} · {{ selected_term|title }} term{% else %} across all approved terms{% endif %}</p></div><span class="invoice-status result-approved">Approved</span></div>
+        <div class="student-score-table-wrap">
+            <table class="student-score-table">
+                <thead><tr><th>Class</th><th>Term</th><th>Course</th><th>CA 1</th><th>CA 2</th><th>CA 3</th><th>Exam</th><th>Total</th><th>Grade</th><th>Published</th></tr></thead>
+                <tbody>
+                    {% for report in reports %}
+                    {% for grade in report.grades %}
+                    <tr>
+                        <td>{{ report.approval.class_name }}{% if report.approval.class_name|lower|replace(' ', '') != student.entry_class|lower|replace(' ', '') %}<small class="previous-class-label">Previous class record</small>{% endif %}</td>
+                        <td>{{ report.approval.term|title }} term</td>
+                        <td><strong>{{ grade.subject }}</strong></td>
+                        <td>{{ grade.ca1_score|score }}</td>
+                        <td>{{ grade.ca2_score|score }}</td>
+                        <td>{{ grade.ca3_score|score }}</td>
+                        <td>{{ grade.exam_score|score }}</td>
+                        <td><strong>{{ grade.total_score|score }}</strong></td>
+                        <td>{{ grade.total_score|result_grade }}</td>
+                        <td>{{ report.approval.approved_at.strftime('%b %d, %Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% else %}
+<section class="invoice-empty"><span class="invoice-empty-icon">▤</span><strong>No approved results yet</strong><p>Your teachers can enter marks for your class. Each course result appears here as soon as the administrator approves that subject.</p><a class="button button-outline" href="{{ url_for('table') }}">View class timetable <span>→</span></a></section>
+{% endif %}
+{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+.result-term-filter{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 20px;padding:15px;border:1px solid var(--portal-border,#e3e9f1);border-radius:12px;background:#fff}
+.result-term-filter label{display:grid;gap:5px;color:var(--portal-ink,#192b43);font-size:12px;font-weight:700}
+.result-term-filter select{min-width:200px;min-height:42px;padding:8px 10px;border:1px solid #d7e0ea;border-radius:8px;background:#fff;color:inherit;font:inherit}
+.student-score-table td:first-child{white-space:nowrap}
+.previous-class-label{display:block;margin-top:3px;color:var(--portal-muted,#78869a);font-size:10px}
+@media(max-width:540px){.result-term-filter{align-items:stretch;flex-direction:column}.result-term-filter select,.result-term-filter button{width:100%}}
+</style>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    document.getElementById('result-term')?.addEventListener('change', (event) => {
+        event.currentTarget.form.requestSubmit();
+    });
+</script>
+{% endblock %}

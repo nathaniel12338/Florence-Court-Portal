@@ -1,0 +1,38 @@
+{% extends "student_portal_base.html" %}
+{% block page_title %}Class timetable{% endblock %}
+{% block breadcrumb %}Timetable{% endblock %}
+{% block content %}
+<header class="invoice-page-heading">
+    <div><span class="eyebrow">YOUR CLASS SCHEDULE</span><h1>Timetable</h1><p>Lessons published for {{ student.entry_class }}. Choose a term to view its schedule.</p></div>
+    <div class="invoice-count-card"><span class="invoice-count-icon">▦</span><span><small>My class</small><strong>{{ student.entry_class }}</strong></span></div>
+</header>
+<section class="student-page-card timetable-filter">
+    <form method="get" action="{{ url_for('table') }}" class="student-filter-form">
+        <div class="student-filter-field">
+            <label for="term">Academic term</label>
+            <select id="term" name="term" required>
+                <option value="">Select a term</option>
+                {% for term in term_options %}<option value="{{ term }}" {% if selected_term == term %}selected{% endif %}>{{ term|title }} term</option>{% endfor %}
+            </select>
+        </div>
+        <button class="button invoice-pay-button" type="submit">View timetable</button>
+    </form>
+</section>
+{% if selected_term %}
+    {% if fetched_data %}
+    <section class="student-page-card">
+        <div class="student-card-heading"><div><span class="eyebrow">{{ student.entry_class }} · {{ selected_term|title }} TERM</span><h2>Lesson schedule</h2></div><span class="invoice-status">{{ fetched_data|length }} lessons</span></div>
+        <div class="student-score-table-wrap">
+            <table class="student-score-table">
+                <thead><tr><th>Day &amp; date</th><th>Time</th><th>Subject</th><th>Teacher</th></tr></thead>
+                <tbody>{% for lesson in fetched_data %}<tr><td>{{ lesson.date.strftime('%A, %d %b %Y') }}</td><td>{{ lesson.time.strftime('%I:%M %p') }}</td><td><strong>{{ lesson.subject }}</strong></td><td>{{ lesson.techername }}</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </section>
+    {% else %}
+    <section class="invoice-empty"><span class="invoice-empty-icon">▦</span><strong>No timetable published for this term</strong><p>Please check again later or contact the school office.</p></section>
+    {% endif %}
+{% else %}
+<section class="invoice-empty"><span class="invoice-empty-icon">▦</span><strong>Select a term to get started</strong><p>Your timetable will appear here after you choose a term.</p></section>
+{% endif %}
+{% endblock %}

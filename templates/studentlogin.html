@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#28166b">
+    <title>Student sign in | Florence Court</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+</head>
+<body>
+    <main class="login-page">
+        <section class="login-showcase">
+            <a class="login-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+                <span><strong>Florence Court</strong><small>International Schools</small></span>
+            </a>
+            <div class="login-promo">
+                <span class="eyebrow">WELCOME TO YOUR STUDENT SPACE</span>
+                <h1>Your school life, all in one place.</h1>
+                <p>Sign in to see your school information, check invoices, explore learning resources, and stay connected with Florence Court.</p>
+                <div class="login-highlights"><span>School updates</span><span>Learning resources</span><span>Fee invoices</span></div>
+            </div>
+            <div class="login-showcase-footer">© {{ now.year if now is defined else 2026 }} Florence Court International Schools</div>
+        </section>
+        <section class="login-form-side">
+            <div class="login-form-card">
+                <span class="eyebrow">STUDENT PORTAL</span>
+                <h2>Welcome back</h2>
+                <p class="login-intro">Enter your registered email and admission number to access your account.</p>
+                {% if portal_disabled %}
+                <p class="login-error" role="alert">{{ error_message }}</p>
+                <div class="login-notice">Student portal access has been paused by the school. Please contact the school office for assistance.</div>
+                {% else %}
+                <form class="login-form" action="{{ url_for('studentlogin') }}" method="post">
+                    <div>
+                        <label for="email">Email address</label>
+                        <div class="login-input-wrap"><span class="login-input-icon" aria-hidden="true">✉</span><input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" required autofocus></div>
+                    </div>
+                    <div>
+                        <label for="admission_id">Admission number</label>
+                        <div class="login-input-wrap"><span class="login-input-icon" aria-hidden="true">⌑</span><input type="text" id="admission_id" name="admission_id" placeholder="Enter your admission number" autocomplete="username" required></div>
+                    </div>
+                    {% if error_message %}<p class="login-error" role="alert">{{ error_message }}</p>{% endif %}
+                    <button class="login-submit" type="submit">Sign in to student portal <span aria-hidden="true">→</span></button>
+                </form>
+                <div class="login-links"><a href="{{ url_for('forgot') }}">Forgot your password?</a><a href="{{ url_for('index') }}">Back to school website</a></div>
+                <div class="login-notice"><strong>New to the student portal?</strong><br>Use the email address and admission number provided by the school. If you are an existing student without portal access, please contact the school administrator.</div>
+                {% endif %}
+                <p class="login-privacy">Your school account is private. Remember to sign out on shared devices.</p>
+            </div>
+        </section>
+    </main>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden><span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span></div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+</body>
+</html>

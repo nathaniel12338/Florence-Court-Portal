@@ -1,0 +1,72 @@
+{% extends "student_portal_base.html" %}
+{% block page_title %}My invoices{% endblock %}
+{% block breadcrumb %}Fees &amp; invoices{% endblock %}
+{% block content %}
+<header class="invoice-page-heading">
+    <div><span class="eyebrow">STUDENT FINANCE</span><h1>My invoices</h1><p>Fee information issued to you for {{ student.entry_class }} · {{ student.entry_session }}.</p></div>
+    <div class="invoice-count-card"><span class="invoice-count-icon">＄</span><span><small>Total invoices</small><strong>{{ invoices|length }}</strong></span></div>
+</header>
+{% if invoices %}
+<section class="student-invoice-list" aria-label="Your fee invoices">
+    <article class="student-invoice-card">
+        <div class="student-invoice-card-top"><div><span class="invoice-type-label">STUDENT FINANCE</span><h2>Invoices</h2></div><span class="invoice-status">{{ invoices|length }} issued</span></div>
+        <div class="student-invoice-entries">
+            {% for invoice in invoices %}
+            <section class="student-invoice-entry" aria-label="{{ invoice.fee_type }} invoice">
+                <div class="student-invoice-entry-heading"><div><span class="invoice-type-label">FEE INVOICE · #{{ invoice.id }}</span><h3>{{ invoice.fee_type }}</h3></div><strong class="student-invoice-entry-amount">₦{{ '{:,.2f}'.format(invoice.amount) }}</strong></div>
+                <div class="student-invoice-details">
+                    <div><small>CLASS</small><strong>{{ invoice.class_name }}</strong></div><div><small>SCHOOL SESSION</small><strong>{{ invoice.school_session }}</strong></div>
+                    <div><small>DUE DATE</small><strong>{{ invoice.due_date.strftime('%b %d, %Y') if invoice.due_date else 'Not specified' }}</strong></div><div><small>ISSUED</small><strong>{{ invoice.issued_at.strftime('%b %d, %Y') }}</strong></div>
+                </div>
+                {% if invoice.description %}<p class="student-invoice-note">{{ invoice.description }}</p>{% endif %}
+                <div class="invoice-card-actions"><p class="student-invoice-issued">Issued {{ invoice.issued_at.strftime('%b %d, %Y') }}</p><button class="button invoice-pay-button" type="button" data-reference="{{ invoice.id }}" data-type="{{ invoice.fee_type }}" data-amount="₦{{ '{:,.2f}'.format(invoice.amount) }}" data-class="{{ invoice.class_name }}" data-session="{{ invoice.school_session }}" data-due="{{ invoice.due_date.strftime('%b %d, %Y') if invoice.due_date else 'Not specified' }}">Pay invoice</button></div>
+            </section>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% else %}
+<section class="invoice-empty"><span class="invoice-empty-icon">✓</span><strong>No invoices yet</strong><p>There are no fee invoices linked to your account right now. Any new invoice issued by the school will appear here.</p></section>
+{% endif %}
+<dialog class="payment-dialog" id="payment-dialog" aria-labelledby="payment-dialog-title">
+    <form method="dialog" class="payment-dialog-close"><button aria-label="Close payment information">×</button></form>
+    <span class="invoice-count-icon payment-dialog-icon">₦</span><span class="eyebrow">PAYMENT INFORMATION</span><h2 id="payment-dialog-title">Invoice payment</h2>
+    <p class="payment-dialog-copy">Online payments are not available yet. This button has not charged you or marked the invoice as paid.</p>
+    <dl class="payment-dialog-details">
+        <div><dt>Invoice reference</dt><dd id="payment-reference"></dd></div><div><dt>Fee</dt><dd id="payment-type"></dd></div><div><dt>Amount due</dt><dd id="payment-amount"></dd></div>
+        <div><dt>Class / session</dt><dd><span id="payment-class"></span> · <span id="payment-session"></span></dd></div><div><dt>Due date</dt><dd id="payment-due"></dd></div>
+    </dl>
+    <p class="payment-dialog-copy">Please contact the school finance office to arrange payment. Provide the invoice reference above so your payment can be matched correctly.</p>
+    <form method="dialog"><button class="button button-outline payment-dialog-done">Close</button></form>
+</dialog>
+{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+.student-invoice-list{display:block}
+.student-invoice-card{padding:20px}
+.student-invoice-entries{margin-top:14px}
+.student-invoice-entry{padding:18px 0}
+.student-invoice-entry-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.student-invoice-entry-heading h3{margin:2px 0 0;color:var(--portal-ink);font-family:Manrope,sans-serif;font-size:15px}
+.student-invoice-entry-amount{color:var(--portal-primary);font-family:Manrope,sans-serif;font-size:20px;white-space:nowrap}
+@media(max-width:540px){.student-invoice-entry-heading{align-items:flex-start;flex-direction:column}.student-invoice-entry-amount{font-size:18px}}
+</style>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    const paymentDialog = document.getElementById('payment-dialog');
+    document.querySelectorAll('.invoice-pay-button').forEach((button) => {
+        button.addEventListener('click', () => {
+            document.getElementById('payment-reference').textContent = button.dataset.reference;
+            document.getElementById('payment-type').textContent = button.dataset.type;
+            document.getElementById('payment-amount').textContent = button.dataset.amount;
+            document.getElementById('payment-class').textContent = button.dataset.class;
+            document.getElementById('payment-session').textContent = button.dataset.session;
+            document.getElementById('payment-due').textContent = button.dataset.due;
+            paymentDialog.showModal();
+        });
+    });
+</script>
+{% endblock %}

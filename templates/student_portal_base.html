@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#28166b">
+    <title>{% block page_title %}Student portal{% endblock %} | Florence Court</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <script>
+        (() => {
+            const savedTheme = localStorage.getItem('student-portal-theme') || 'light';
+            const applyTheme = () => {
+                const theme = savedTheme === 'system'
+                ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : savedTheme;
+                document.documentElement.dataset.portalTheme = theme;
+            };
+            applyTheme();
+            if (savedTheme === 'system') {
+                matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="portal-layout">
+        <aside class="portal-sidebar" id="portal-sidebar">
+            <a class="portal-brand" href="{{ url_for('dashboard') }}">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+                <span><strong>Florence Court</strong><small>Student portal</small></span>
+            </a>
+            <div class="sidebar-profile">
+                <img class="student-avatar" src="{{ student_passport_url(student) }}" alt="{{ student.firstName }} {{ student.lastName }} passport photo">
+                <span><strong>{{ student.firstName }} {{ student.lastName }}</strong><small>{{ student.entry_class }} · {{ student.admission_id }}</small></span>
+            </div>
+            <nav class="portal-nav" aria-label="Student navigation">
+                <span class="nav-caption">STUDENT SPACE</span>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'dashboard' else '' }}" href="{{ url_for('dashboard') }}"><span class="nav-icon">⌂</span>Overview</a>
+                <a class="portal-nav-link{{ ' active' if request.endpoint in ('my_invoices', 'payment') else '' }}" href="{{ url_for('my_invoices') }}"><span class="nav-icon">＄</span>Fees &amp; invoices{% if invoice_count|default(0) %}<span class="nav-count">{{ invoice_count }}</span>{% endif %}</a>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'table' else '' }}" href="{{ url_for('table') }}"><span class="nav-icon">▦</span>Timetable</a>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'student_results' else '' }}" href="{{ url_for('student_results') }}"><span class="nav-icon">▤</span>My results</a>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'check_result' else '' }}" href="{{ url_for('check_result') }}"><span class="nav-icon">▧</span>External results</a>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'library' else '' }}" href="{{ url_for('library') }}"><span class="nav-icon">▣</span>E-library</a>
+                <span class="nav-caption nav-caption-spaced">MY PROFILE</span>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'Biodata' else '' }}" href="{{ url_for('Biodata') }}"><span class="nav-icon">◎</span>Biodata</a>
+                <a class="portal-nav-link{{ ' active' if request.endpoint == 'passport' else '' }}" href="{{ url_for('passport') }}"><span class="nav-icon">◉</span>Passport photo</a>
+            </nav>
+            <div class="sidebar-help">
+                <span class="help-icon">i</span>
+                <strong>Need some help?</strong>
+                <p>Contact the school office for help with your portal or account.</p>
+                <a href="{{ url_for('index') }}">Visit school website <span>↗</span></a>
+            </div>
+        </aside>
+
+        <main class="portal-main">
+            <header class="portal-topbar">
+                <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+                <div class="breadcrumb">Student portal <span>/</span> <strong>{% block breadcrumb %}Overview{% endblock %}</strong></div>
+                <div class="profile-menu">
+                    <button class="topbar-profile" id="profile-menu-button" type="button" aria-expanded="false" aria-controls="profile-menu">
+                        <img class="topbar-avatar" src="{{ student_passport_url(student) }}" alt="">
+                        <span class="profile-name"><strong>{{ student.firstName }} {{ student.lastName }}</strong><small>Student</small></span>
+                    </button>
+                    <nav class="profile-dropdown" id="profile-menu" aria-label="Student profile menu" hidden>
+                        <div class="profile-dropdown-heading">
+                            <strong>{{ student.firstName }} {{ student.lastName }}</strong>
+                            <small>{{ student.entry_class }} · {{ student.admission_id }}</small>
+                        </div>
+                        <a href="{{ url_for('Biodata') }}">My biodata</a>
+                        <a href="{{ url_for('passport') }}">Passport photo</a>
+                        <a class="profile-signout" href="{{ url_for('logout') }}">↪ <span>Sign out</span></a>
+                    </nav>
+                </div>
+            </header>
+            <div class="portal-content student-page-content">
+                {% if student.is_graduated %}
+                <div class="portal-flash graduate-readonly-notice" role="status">
+                    <strong>Graduated student account</strong>
+                    <span>Your school records remain available here in read-only mode. Contact the school office if you need help.</span>
+                </div>
+                {% endif %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    <div class="portal-flash-list" role="status">
+                        {% for category, message in messages %}
+                        <div class="portal-flash portal-flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+                <footer class="portal-footer"><span>© {{ today.year }} Florence Court International Schools</span><span>Learning together, growing together.</span></footer>
+            </div>
+        </main>
+    </div>
+    <div class="sidebar-scrim" hidden></div>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden>
+        <span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span>
+    </div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+    <script>
+        const sidebar = document.getElementById('portal-sidebar');
+        const menuToggle = document.querySelector('.menu-toggle');
+        const scrim = document.querySelector('.sidebar-scrim');
+        const setNavigationOpen = (open) => {
+            sidebar.classList.toggle('sidebar-open', open);
+            scrim.hidden = !open;
+            menuToggle.setAttribute('aria-expanded', String(open));
+        };
+        menuToggle.addEventListener('click', () => {
+            setNavigationOpen(!sidebar.classList.contains('sidebar-open'));
+        });
+        scrim.addEventListener('click', () => setNavigationOpen(false));
+        const profileMenuButton = document.getElementById('profile-menu-button');
+        const profileMenu = document.getElementById('profile-menu');
+        const setProfileMenuOpen = (open) => {
+            profileMenu.hidden = !open;
+            profileMenuButton.setAttribute('aria-expanded', String(open));
+        };
+        profileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            setProfileMenuOpen(profileMenu.hidden);
+        });
+        profileMenu.addEventListener('click', (event) => {
+            if (event.target.closest('a')) setProfileMenuOpen(false);
+        });
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.profile-menu')) setProfileMenuOpen(false);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                setNavigationOpen(false);
+                setProfileMenuOpen(false);
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

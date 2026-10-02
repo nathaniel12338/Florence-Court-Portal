@@ -1,0 +1,181 @@
+{% extends "admin_base.html" %}
+{% block title %}Staff accounts{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div>
+        <p class="admin-eyebrow">PEOPLE</p>
+        <h1>Staff accounts</h1>
+        <p>Manage staff access, portal availability, and teacher accounts from one clear workspace.</p>
+    </div>
+    <a class="admin-button secondary" href="{{ url_for('tasks') }}">View staff tasks</a>
+</header>
+<section class="staff-stats" aria-label="Staff account summary">
+    <article><span>Total staff</span><strong>{{ staff_members|length }}</strong><small>Accounts on record</small></article>
+    <article><span>Active accounts</span><strong>{{ staff_members|selectattr('is_active')|list|length }}</strong><small>Can sign in while the staff portal is open</small></article>
+    <article><span>Inactive accounts</span><strong>{{ staff_members|rejectattr('is_active')|list|length }}</strong><small>Staff sign-in disabled</small></article>
+</section>
+<section class="admin-panel portal-control-panel">
+    <div class="admin-panel-heading">
+        <div><h2>Portal access</h2><p class="admin-muted">Pause or reopen portal sign-in for all students or staff. Admin access is not affected.</p></div>
+        <span class="admin-badge {{ 'success' if student_portal_enabled and staff_portal_enabled else 'warning' }}">{{ 'Both portals open' if student_portal_enabled and staff_portal_enabled else 'Access restricted' }}</span>
+    </div>
+    <form class="portal-controls" method="post" action="{{ url_for('update_portal_settings') }}">
+        <label for="student-portal-setting"><span><strong>Student portal</strong><small>Student accounts, fees, timetable, results, and profile</small></span>
+            <select id="student-portal-setting" name="student" aria-label="Student portal availability">
+                <option value="enabled" {{ 'selected' if student_portal_enabled else '' }}>Enabled</option>
+                <option value="disabled" {{ 'selected' if not student_portal_enabled else '' }}>Disabled</option>
+            </select>
+        </label>
+        <label for="staff-portal-setting"><span><strong>Staff portal</strong><small>Teacher results, timetables, library, and assigned tasks</small></span>
+            <select id="staff-portal-setting" name="staff" aria-label="Staff portal availability">
+                <option value="enabled" {{ 'selected' if staff_portal_enabled else '' }}>Enabled</option>
+                <option value="disabled" {{ 'selected' if not staff_portal_enabled else '' }}>Disabled</option>
+            </select>
+        </label>
+        <button class="admin-button" type="submit">Save portal settings</button>
+    </form>
+</section>
+<div class="admin-grid">
+    <section class="admin-panel">
+        <div class="admin-panel-heading"><h2>Add a staff member</h2></div>
+        <form class="admin-form" method="post" action="{{ url_for('staff_management') }}">
+            <div><label for="staff_id">Staff ID</label><input id="staff_id" name="staff_id" maxlength="50" autocomplete="off" required></div>
+            <div><label for="full_name">Full name</label><input id="full_name" name="full_name" maxlength="120" autocomplete="name" required></div>
+            <div><label for="email">Email address</label><input id="email" name="email" type="email" maxlength="120" autocomplete="email" required></div>
+            <div><label for="password">Temporary password</label><input id="password" name="password" type="password" minlength="8" autocomplete="new-password" required></div>
+            <button class="admin-button" type="submit">Create staff account</button>
+        </form>
+    </section>
+    <section class="admin-panel">
+        <div class="admin-panel-heading">
+            <div><h2>Staff directory</h2><p class="admin-muted">Browse and search teacher accounts and access status.</p></div>
+            <input class="admin-search staff-search" type="search" id="staff-search" placeholder="Search staff" aria-label="Search staff directory">
+        </div>
+        {% if staff_members %}
+        <div class="admin-table-wrap">
+            <table class="admin-table staff-table">
+                <thead><tr><th>Staff member</th><th>Staff ID</th><th>Email address</th><th>Access</th><th>Management</th></tr></thead>
+                <tbody>
+                    {% for member in staff_members %}
+                    <tr class="staff-row">
+                        <td><strong>{{ member.full_name }}</strong><br><span class="admin-muted">Florence Court staff</span></td>
+                        <td><span class="staff-id">{{ member.staff_id }}</span></td>
+                        <td>{{ member.email }}</td>
+                        <td><span class="admin-badge {{ 'success' if member.is_active else 'warning' }}"><i class="staff-status-dot {{ 'online' if member.is_active else '' }}"></i>{{ 'Active' if member.is_active else 'Inactive' }}</span></td>
+                        <td class="staff-management-cell">
+                            <details class="staff-edit-details">
+                                <summary>Edit details &amp; courses</summary>
+                                <div class="staff-edit-content">
+                                    <form class="admin-form staff-edit-form" method="post" action="{{ url_for('staff_management') }}">
+                                        <input type="hidden" name="action" value="update_staff">
+                                        <input type="hidden" name="staff_pk" value="{{ member.id }}">
+                                        <div><label for="staff-id-{{ member.id }}">Staff ID</label><input id="staff-id-{{ member.id }}" name="staff_id" maxlength="50" value="{{ member.staff_id }}" required></div>
+                                        <div><label for="staff-name-{{ member.id }}">Full name</label><input id="staff-name-{{ member.id }}" name="full_name" maxlength="120" value="{{ member.full_name }}" required></div>
+                                        <div><label for="staff-email-{{ member.id }}">Email address</label><input id="staff-email-{{ member.id }}" name="email" type="email" maxlength="120" value="{{ member.email }}" required></div>
+                                        <div><label for="staff-password-{{ member.id }}">New password <span class="admin-muted">(optional)</span></label><input id="staff-password-{{ member.id }}" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current password"></div>
+                                        <div><label for="staff-access-{{ member.id }}">Account access</label><select id="staff-access-{{ member.id }}" name="is_active"><option value="enabled" {{ 'selected' if member.is_active else '' }}>Active</option><option value="disabled" {{ 'selected' if not member.is_active else '' }}>Inactive</option></select></div>
+                                        <button class="admin-button" type="submit">Save staff details</button>
+                                    </form>
+                                    <section class="staff-assigned-courses" aria-label="Assigned courses for {{ member.full_name }}">
+                                        <div class="staff-assigned-heading"><h3>Assigned courses</h3><a href="{{ url_for('course_management', teacher_id=member.id) }}#course-assignment-form">Add or update courses</a></div>
+                                        {% if staff_course_assignments[member.id] %}
+                                        <ul class="staff-assignment-list">
+                                            {% for assignment in staff_course_assignments[member.id] %}
+                                            <li>
+                                                <span><strong>{{ assignment.subject }}</strong><small>{{ assignment.class_name }} · {{ assignment.term|title }} term</small></span>
+                                                {% if member.is_active %}
+                                                <form method="post" action="{{ url_for('staff_management') }}" class="staff-reassign-form">
+                                                    <input type="hidden" name="action" value="change_assignment">
+                                                    <input type="hidden" name="staff_pk" value="{{ member.id }}">
+                                                    <input type="hidden" name="class_key" value="{{ assignment.class_key }}">
+                                                    <input type="hidden" name="lesson_id" value="{{ assignment.timetable_id }}">
+                                                    <label class="visually-hidden" for="reassign-{{ member.id }}-{{ assignment.class_key }}-{{ assignment.timetable_id }}">Assign {{ assignment.subject }} to</label>
+                                                    <select id="reassign-{{ member.id }}-{{ assignment.class_key }}-{{ assignment.timetable_id }}" name="target_staff_id" required>
+                                                        <option value="">Change teacher…</option>
+                                                        {% for target in staff_members if target.is_active and target.id != member.id %}
+                                                        <option value="{{ target.id }}">{{ target.full_name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <button class="admin-button secondary" type="submit">Update</button>
+                                                </form>
+                                                {% endif %}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <p class="admin-muted">No timetable courses are assigned to this staff member yet.</p>
+                                        {% endif %}
+                                    </section>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty">No staff accounts yet. Create an account to assign tasks and timetable lessons.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+{% block head %}
+<style>
+.staff-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.staff-stats article{display:grid;gap:3px;padding:17px;border:1px solid var(--admin-border);border-radius:12px;background:linear-gradient(135deg,#fff,#f8fafd)}
+.staff-stats span{color:var(--admin-muted);font-size:11px;font-weight:650}
+.staff-stats strong{color:var(--admin-navy);font-size:25px;line-height:1.2}
+.staff-stats small{color:#8794a6;font-size:10px}
+.portal-control-panel{margin-bottom:20px}
+.portal-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.portal-controls>label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:13px;border:1px solid var(--admin-border);border-radius:9px;background:#fbfcfe}
+.portal-controls>label span strong,.portal-controls>label span small{display:block}
+.portal-controls>label span strong{color:var(--admin-navy);font-size:12px}
+.portal-controls>label span small{margin-top:3px;color:var(--admin-muted);font-size:10px}
+.portal-controls select{min-width:110px;min-height:38px;padding:6px 9px;border:1px solid #d7e0ea;border-radius:7px;background:#fff;color:var(--admin-ink);font:inherit;font-size:12px}
+.portal-controls button{grid-column:1/-1;justify-self:start}
+.staff-search{max-width:260px}
+.staff-table td:first-child .admin-muted{font-size:10px}
+.staff-id{display:inline-flex;padding:4px 8px;border-radius:6px;background:#f1f5f9;color:#42536a;font-size:11px;font-weight:650}
+.staff-status-dot{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#d69b34;vertical-align:middle}
+.staff-status-dot.online{background:#318b7e}
+.staff-row[hidden]{display:none}
+.staff-management-cell{min-width:190px}
+.staff-edit-details{min-width:185px}
+.staff-edit-details summary{color:var(--admin-blue);font-size:11px;font-weight:700;cursor:pointer}
+.staff-edit-content{position:relative;z-index:3;width:min(620px,78vw);max-height:75vh;overflow:auto;margin-top:10px;padding:16px;border:1px solid var(--admin-border);border-radius:10px;background:#fff;box-shadow:0 14px 36px #1c355126}
+.staff-edit-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.staff-edit-form>div label{display:block;margin-bottom:5px;color:var(--admin-muted);font-size:11px}
+.staff-edit-form input,.staff-edit-form select,.staff-reassign-form select{width:100%;min-height:38px;padding:7px 9px;border:1px solid #d7e0ea;border-radius:7px;background:#fff;color:var(--admin-ink);font:inherit;font-size:12px}
+.staff-edit-form>button{grid-column:1/-1;justify-self:start}
+.staff-assigned-courses{margin-top:18px;padding-top:14px;border-top:1px solid var(--admin-border)}
+.staff-assigned-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.staff-assigned-heading h3{margin:0;color:var(--admin-navy);font-size:13px}
+.staff-assigned-heading a{font-size:11px;font-weight:650}
+.staff-assignment-list{display:grid;gap:7px;margin:10px 0 0;padding:0;list-style:none}
+.staff-assignment-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px;border:1px solid #e8edf3;border-radius:8px;background:#fbfcfe}
+.staff-assignment-list li>span strong,.staff-assignment-list li>span small{display:block}
+.staff-assignment-list li>span strong{color:var(--admin-navy);font-size:11px}
+.staff-assignment-list li>span small{margin-top:3px;color:var(--admin-muted);font-size:10px}
+.staff-reassign-form{display:flex;align-items:center;gap:6px}
+.staff-reassign-form select{min-width:150px}
+.staff-reassign-form .admin-button{min-height:34px;padding:5px 9px;font-size:10px;white-space:nowrap}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:760px){.staff-stats{grid-template-columns:1fr}.portal-controls{grid-template-columns:1fr}.portal-controls button{grid-column:auto;width:100%}.portal-controls>label{align-items:flex-start;flex-direction:column}.portal-controls select{width:100%}.staff-search{max-width:100%}}
+@media(max-width:760px){.staff-edit-content{position:fixed;left:5vw;right:5vw;top:12vh;width:90vw;max-height:76vh}.staff-edit-form{grid-template-columns:1fr}.staff-edit-form>button{grid-column:auto;width:100%}.staff-assigned-heading{align-items:flex-start;flex-direction:column}.staff-assignment-list li{align-items:stretch;flex-direction:column}.staff-reassign-form{align-items:stretch}.staff-reassign-form select{min-width:0;flex:1}}
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+    const staffSearch = document.getElementById('staff-search');
+    if (staffSearch) {
+        staffSearch.addEventListener('input', () => {
+            const query = staffSearch.value.trim().toLocaleLowerCase();
+            document.querySelectorAll('.staff-row').forEach((row) => {
+                row.hidden = !row.textContent.toLocaleLowerCase().includes(query);
+            });
+        });
+    }
+</script>
+{% endblock %}

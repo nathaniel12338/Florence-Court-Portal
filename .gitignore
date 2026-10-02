@@ -1,0 +1,11 @@
+.env
+.env
+.venv/
+__pycache__/
+*.py[cod]
+Thumbs.db
+uploads/*
+!uploads/library/
+uploads/library/*
+results/*
+!.gitkeep

@@ -7,65 +7,132 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile</title>
   <!-- Favicon -->
-  <link rel="shortcut icon" href="./img/svg/logo.svg" type="image/x-icon">
-  <!-- Custom styles -->
+  <link rel="icon" type="image/png" sizes="96x96" href="/static/img/logo.jpg">
+
   <link rel="stylesheet" href="static/css/style.min.css">
+  <style>
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+    }
+  
+    .cancel-button,
+    .save-button {
+      flex: 1;
+      text-align: center;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 3px;
+      text-decoration: none;
+    }
+  
+    .cancel-button {
+      background-color: #fff;
+      color: #e9a820;
+      border: 2px solid #e9a820;
+    }
+  
+    .save-button {
+      background-color: #e9a820;
+      color: #fff;
+    }
+
+    
+        .flash-messages {
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 10px;
+            z-index: 1000;
+        }
+        
+        .flash-message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            color: #721c24; /* Default text color for messages */
+        }
+        
+        .flash-message.error {
+            background-color: #d43441; /* Background color for error messages */
+            color: #d94251; /* Text color for error messages */
+        }
+            </style>
+  
+  
 </head>
 
 <body>
+  {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flash-messages">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
   <form class="sign-up-form form" method="post" action="/profile">
-  <div class="layer"></div>
-<main class="page-center">
-  <article class="sign-up">
-    <h1 class="sign-up__title">Profile</h1>
-    <p class="sign-up__subtitle">Each password can be use by one person,dont disclose your password with anyone</p>
-    <!-- <form class="sign-up-form form" action="" method=""> -->
-      <label class="form-label-wrapper">
-        <p class="form-label">Username</p>
-        <input class="form-input" type="text" id="username" name="username" placeholder="Username" required readonly value="{% if user_class %}{{ user_class.username }}{% endif %}">
-    </label>
-    <label class="form-label-wrapper">
-        <p class="form-label">Email</p>
-        <input class="form-input" type="text" id="email" name="email" placeholder="Email" required readonly  value="{% if user_class %}{{ user_class.email }}{% endif %}">
-    </label>
-    <label class="form-label-wrapper">
-        <p class="form-label">Class</p>
-        <input class="form-input" type="text" id="class" name="class" placeholder="Class" required readonly value="{% if user_class %}{{ user_class.class }}{% endif %}">
-    </label>
-    <label class="form-label-wrapper">
-        <p class="form-label">Gender</p>
-        <input class="form-input" type="text" id="gender" name="gender" placeholder="Gender" required readonly  value="{% if user_class %}{{ user_class.gender }}{% endif %}">
-    </label>
-    
-    
-    
-      <h3>Change Password</h3>
-      
-      <label class="form-label-wrapper">
-        <p class="form-label">Old Password</p>
-        <input class="form-input" type="text" name="oldpassword" placeholder="Old Password" required>
-      </label>
-
-      <label class="form-label-wrapper">
-        <p class="form-label">New Password</p>
-        <input class="form-input" type="text" name="newpassword" placeholder="New Password" required>
-      </label>
-      <label class="form-label-wrapper">
-        <p class="form-label">Confirm Password</p>
-        <input class="form-input" type="text" name="confirmpassword" placeholder="Confirm Password" required>
-      </label>
-    
-    
+    <div class="layer"></div>
+    <main class="page-center">
+      <article class="sign-up">
+        <h1 class="sign-up__title">Profile</h1>
+        <p class="sign-up__subtitle">Each password can be used by one person; don't disclose your password with anyone</p>
         
-        <!-- Add "Cancel" and "Submit" buttons -->
-        <div style="display: flex; justify-content: space-between;">
-          <a href="/dashboard" style="flex: 1; text-align: center; padding: 10px 20px; font-size: 16px; border-radius: 3px; text-decoration: none; background-color: #fff; color: #00ffcc; border: 2px solid #00ffcc;">Cancel</a>
-          
-          <button type="submit" style="flex: 1; text-align: center; padding: 10px 20px; font-size: 16px; border-radius: 3px; text-decoration: none; background-color: #00ffcc; color: #fff; width: 20px;" >Save</button>
-      </div>
-      
-      
-    </form>
+        {% if total_students %}
+          <label class="form-label-wrapper">
+            <p class="form-label">Surname</p>
+            <input class="form-input" type="text" id="username" name="username" placeholder="Username" required readonly value="{{ total_students.username }}">
+            
+          </label>
+
+          <label class="form-label-wrapper">
+            <p class="form-label">Fist Name</p>
+            <input class="form-input" type="text" id="username" name="firstName" placeholder="firstName" required readonly value="{{ total_students.firstName }}">
+            
+          </label>
+         
+
+          <label class="form-label-wrapper">
+            <p class="form-label">Other Name</p>
+            <input class="form-input" type="text" id="lastName" name="lastName" placeholder="Gender" required readonly value="{{ total_students.lastName }}">
+          </label>
+          <label class="form-label-wrapper">
+            <p class="form-label">Email</p>
+            <input class="form-input" type="text" id="email" name="email" placeholder="Email" required readonly value="{{ total_students.email }}">
+          </label>
+
+        {% else %}
+          <p>No user information available.</p>
+        {% endif %}
+
+        <h3>Change Password</h3>
+
+        <label class="form-label-wrapper">
+          <p class="form-label">Old Password</p>
+          <input class="form-input" type="current_password" name="current_password" placeholder="Old password" required>
+        </label>
+
+        <label class="form-label-wrapper">
+          <p class="form-label">New Password</p>
+          <input class="form-input" type="password" name="new_password" placeholder="New Password" required>
+        </label>
+
+        <label class="form-label-wrapper">
+          <p class="form-label">Confirm Password</p>
+          <input class="form-input" type="password" name="confirm_password" placeholder="Confirm Password" required>
+        </label>
+
+        <!-- Add "Cancel" and "Submit" buttons with classes -->
+        <div class="button-container">
+          <a href="/dashboard" class="cancel-button">Cancel</a>
+          <button type="submit" class="save-button">Save</button>
+        </div>
+      </article>
+    </main>
+  </form>
+</body>
+
     <!-- <script>
       function  dashboard() {
            // Redirect to student.html

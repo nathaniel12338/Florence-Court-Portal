@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#142d4e">
+    <title>Reset password | Florence Court</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account_pages.css') }}">
+</head>
+<body>
+    <main class="account-shell">
+        <section class="account-brand-panel">
+            <a class="account-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+                <span><strong>Florence Court</strong><small>International Schools</small></span>
+            </a>
+            <div class="account-brand-copy">
+                <span class="account-eyebrow">ACCOUNT SUPPORT</span>
+                <h1>Back to your school workspace.</h1>
+                <p>We’ll send a secure, short-lived code to your staff email so you can choose a new password.</p>
+            </div>
+            <span class="account-brand-footer">Ado-Ekiti · Ekiti State</span>
+        </section>
+        <section class="account-form-panel">
+            <div class="account-form-card">
+                <a class="account-back-link" href="{{ url_for('schoolAdmin') }}">← Staff sign in</a>
+                <span class="account-eyebrow account-eyebrow-dark">PASSWORD RESET</span>
+                <h2>Forgot your password?</h2>
+                <p class="account-intro">Enter the email address linked to your staff account. We’ll send a six-digit code that expires in 15 minutes.</p>
+                <div class="account-messages" role="status" aria-live="polite">
+                    {% for category, message in get_flashed_messages(with_categories=true) %}
+                    <div class="account-message account-message-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                <form method="post" action="{{ url_for('forgot') }}">
+                    <label for="email">Staff email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+                    <button class="account-submit" type="submit">Send reset code <span aria-hidden="true">→</span></button>
+                </form>
+                <p class="account-help">Student portal sign-in uses your registered email and admission number. Contact the school office if you need help with your admission number.</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

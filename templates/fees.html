@@ -1,0 +1,175 @@
+{% extends "admin_base.html" %}
+{% block title %}Student fees{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div><p class="admin-eyebrow">SCHOOL FINANCE</p><h1>Student fees and invoices</h1><p>Set rates for each class and fee type, then invoice one student or everyone in a class.</p></div>
+</header>
+<div class="admin-grid">
+    <section class="admin-panel">
+        <div class="admin-panel-heading"><h2>Set a class fee rate</h2></div>
+        <form class="admin-form" method="post" action="{{ url_for('fee_management') }}">
+            <input type="hidden" name="action" value="save_schedule">
+            <div><label for="fee-class">Class</label><select id="fee-class" name="class_name" required><option value="">Select class</option>{% for class_name in classes %}<option value="{{ class_name }}">{{ class_name }}</option>{% endfor %}</select></div>
+            <div><label for="fee-type">Fee type</label><input id="fee-type" name="fee_type" maxlength="120" placeholder="e.g. Tuition, Uniform, Examination" required></div>
+            <div><label for="fee-amount">Amount (NGN)</label><input id="fee-amount" name="amount" type="number" min="0.01" step="0.01" required></div>
+            <button class="admin-button" type="submit">Save class rate</button>
+        </form>
+    </section>
+    <section class="admin-panel">
+        <div class="admin-panel-heading"><h2>Issue invoices</h2></div>
+        {% if students and schedules %}
+        <form class="admin-form" method="post" action="{{ url_for('fee_management') }}">
+            <input id="invoice-action" type="hidden" name="action" value="issue_invoice">
+            <div><label for="invoice-target">Invoice recipient</label><select id="invoice-target" required><option value="individual">One student</option><option value="class">All students in a class</option></select></div>
+            <div id="student-field"><label for="invoice-student">Student</label><select id="invoice-student" name="student_id" required><option value="">Select student</option>{% for student in students %}<option value="{{ student.id }}" data-class="{{ student.entry_class|lower }}">{{ student.firstName }} {{ student.lastName }} · {{ student.entry_class }} · {{ student.admission_id }}</option>{% endfor %}</select></div>
+            <div id="class-field" hidden><label for="invoice-class">Class</label><select id="invoice-class" name="class_name" disabled><option value="">Select class</option>{% for class_name in classes %}<option value="{{ class_name }}">{{ class_name }}</option>{% endfor %}</select></div>
+            <div><label for="invoice-schedule">Fee type and class rate</label><select id="invoice-schedule" name="schedule_id" required disabled><option value="">Select recipient first</option>{% for schedule in schedules %}<option value="{{ schedule.id }}" data-class="{{ schedule.class_name|lower }}">{{ schedule.fee_type }} · {{ schedule.class_name }} · NGN {{ '%.2f'|format(schedule.amount) }}</option>{% endfor %}</select></div>
+            <div><label for="invoice-due-date">Due date (optional)</label><input id="invoice-due-date" name="due_date" type="date"></div>
+            <div><label for="invoice-description">Note (optional)</label><textarea id="invoice-description" name="description" maxlength="1000" placeholder="Add payment instructions or other details"></textarea></div>
+            <button id="issue-invoice-button" class="admin-button" type="submit">Issue invoice to student</button>
+        </form>
+        {% else %}
+        <div class="admin-empty">Add admitted students and save a class fee rate before issuing an invoice.</div>
+        {% endif %}
+    </section>
+</div>
+<section class="admin-panel" style="margin-top:20px">
+    <div class="admin-panel-heading"><h2>Class fee rates</h2><span class="admin-badge">{{ schedules|length }} rates</span></div>
+    {% if schedules %}
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Class</th><th>Fee type</th><th>Amount</th><th>Actions</th></tr></thead><tbody>
+        {% for schedule in schedules %}
+        <tr>
+            <td>{{ schedule.class_name }}</td>
+            <td>{{ schedule.fee_type }}</td>
+            <td>NGN {{ '%.2f'|format(schedule.amount) }}</td>
+            <td class="rate-actions">
+                <details class="rate-edit">
+                    <summary class="admin-button secondary">Edit rate</summary>
+                    <form class="admin-form" method="post" action="{{ url_for('fee_management') }}">
+                        <input type="hidden" name="action" value="update_schedule">
+                        <input type="hidden" name="schedule_id" value="{{ schedule.id }}">
+                        <div><label for="rate-type-{{ schedule.id }}">Fee type</label><input id="rate-type-{{ schedule.id }}" name="fee_type" maxlength="120" value="{{ schedule.fee_type }}" required></div>
+                        <div><label for="rate-amount-{{ schedule.id }}">Amount (NGN)</label><input id="rate-amount-{{ schedule.id }}" name="amount" type="number" min="0.01" step="0.01" value="{{ '%.2f'|format(schedule.amount) }}" required></div>
+                        <button class="admin-button" type="submit">Save rate</button>
+                    </form>
+                </details>
+                <form method="post" action="{{ url_for('fee_management') }}" onsubmit="return confirm('Delete this fee rate? Previously issued invoices will remain unchanged.')">
+                    <input type="hidden" name="action" value="delete_schedule">
+                    <input type="hidden" name="schedule_id" value="{{ schedule.id }}">
+                    <button class="admin-button danger" type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="admin-empty">No class fee rates have been set yet.</div>{% endif %}
+</section>
+<section class="admin-panel" style="margin-top:20px">
+    <div class="admin-panel-heading"><div><h2>Issued invoices</h2><p class="admin-muted">A fee notice is emailed automatically when an invoice is issued. You can resend it below.</p></div><span class="admin-badge">{{ invoices|length }} invoices</span></div>
+    {% if invoices %}
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Student</th><th>Class</th><th>Session</th><th>Fee type</th><th>Amount</th><th>Due date</th><th>Issued</th><th>Manage</th></tr></thead><tbody>
+        {% for invoice in invoices %}
+        <tr>
+            <td><strong>{{ invoice.student.firstName }} {{ invoice.student.lastName }}</strong><br><span class="admin-muted">{{ invoice.student.email }} · {{ invoice.student.admission_id }}</span></td>
+            <td>{{ invoice.class_name }}</td>
+            <td>{{ invoice.school_session }}</td>
+            <td>{{ invoice.fee_type }}</td>
+            <td>NGN {{ '%.2f'|format(invoice.amount) }}</td>
+            <td>{{ invoice.due_date.strftime('%b %d, %Y') if invoice.due_date else 'Not set' }}</td>
+            <td>{{ invoice.issued_at.strftime('%b %d, %Y') }}</td>
+            <td>
+                <details class="invoice-edit">
+                    <summary>Edit invoice</summary>
+                    <form class="admin-form" method="post" action="{{ url_for('fee_management') }}">
+                        <input type="hidden" name="action" value="update_invoice">
+                        <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+                        <div><label for="invoice-type-{{ invoice.id }}">Fee type</label><input id="invoice-type-{{ invoice.id }}" name="fee_type" maxlength="120" value="{{ invoice.fee_type }}" required></div>
+                        <div><label for="invoice-amount-{{ invoice.id }}">Amount (NGN)</label><input id="invoice-amount-{{ invoice.id }}" name="amount" type="number" min="0.01" step="0.01" value="{{ '%.2f'|format(invoice.amount) }}" required></div>
+                        <div><label for="invoice-due-{{ invoice.id }}">Due date</label><input id="invoice-due-{{ invoice.id }}" name="due_date" type="date" value="{{ invoice.due_date.isoformat() if invoice.due_date else '' }}"></div>
+                        <div><label for="invoice-note-{{ invoice.id }}">Note</label><textarea id="invoice-note-{{ invoice.id }}" name="description" maxlength="1000">{{ invoice.description or '' }}</textarea></div>
+                        <button class="admin-button" type="submit">Save invoice</button>
+                    </form>
+                </details>
+                {% if invoice.invoice_batch_id %}
+                <span class="admin-badge invoice-shared-badge">Shared with class</span>
+                {% else %}
+                <form class="invoice-share-form" method="post" action="{{ url_for('fee_management') }}" onsubmit="return confirm('Share this invoice with future students in {{ invoice.class_name }} for {{ invoice.school_session }}?')">
+                    <input type="hidden" name="action" value="share_invoice">
+                    <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+                    <button class="admin-button secondary" type="submit">Share with future students</button>
+                </form>
+                {% endif %}
+                <form class="invoice-email-form" method="post" action="{{ url_for('fee_management') }}">
+                    <input type="hidden" name="action" value="email_invoice">
+                    <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+                    <button class="admin-button secondary" type="submit">Email fee notice</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="admin-empty">No invoices issued yet.</div>{% endif %}
+</section>
+{% endblock %}
+{% block head %}
+<style>
+.invoice-edit{min-width:120px}
+.invoice-share-form,.invoice-email-form{margin-top:8px}
+.invoice-share-form .admin-button,.invoice-email-form .admin-button{min-height:32px;padding:6px 9px;font-size:11px;white-space:nowrap}
+.invoice-shared-badge{margin-top:8px}
+.invoice-edit{position:relative}
+.invoice-edit summary{color:var(--admin-blue);font-size:12px;font-weight:650;cursor:pointer}
+.invoice-edit form{position:absolute;z-index:2;width:min(320px,80vw);padding:15px;border:1px solid var(--admin-border);border-radius:10px;background:#fff;box-shadow:0 10px 35px #1c355126}
+.invoice-edit form .admin-button{width:100%}
+.invoice-edit form textarea{min-height:64px}
+.rate-actions{display:flex;align-items:center;gap:8px}
+.rate-edit{position:relative}
+.rate-edit summary{min-height:34px;padding:6px 10px;font-size:11px;list-style:none;cursor:pointer}
+.rate-edit summary::-webkit-details-marker{display:none}
+.rate-edit form{position:absolute;z-index:3;right:0;width:min(300px,80vw);padding:15px;border:1px solid var(--admin-border);border-radius:10px;background:#fff;box-shadow:0 10px 35px #1c355126}
+.rate-edit form .admin-button{width:100%}
+.admin-button.danger{min-height:34px;padding:6px 10px;border-color:#efd2cf;background:#fff2f0;color:#913f36;font-size:11px}
+.admin-button.danger:hover{background:#fbe3e0}
+@media(max-width:540px){.rate-actions{align-items:flex-start;flex-direction:column}.rate-edit form{right:auto;left:0}}
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+    const targetSelect = document.getElementById('invoice-target');
+    const invoiceAction = document.getElementById('invoice-action');
+    const studentSelect = document.getElementById('invoice-student');
+    const classSelect = document.getElementById('invoice-class');
+    const studentField = document.getElementById('student-field');
+    const classField = document.getElementById('class-field');
+    const scheduleSelect = document.getElementById('invoice-schedule');
+    const issueButton = document.getElementById('issue-invoice-button');
+    if (targetSelect && scheduleSelect) {
+        const updateRecipient = () => {
+            const classMode = targetSelect.value === 'class';
+            studentField.hidden = classMode;
+            studentSelect.disabled = classMode;
+            studentSelect.required = !classMode;
+            classField.hidden = !classMode;
+            classSelect.disabled = !classMode;
+            classSelect.required = classMode;
+            invoiceAction.value = classMode ? 'issue_class_invoices' : 'issue_invoice';
+            issueButton.textContent = classMode ? 'Issue invoice to whole class' : 'Issue invoice to student';
+            updateScheduleOptions();
+        };
+        const updateScheduleOptions = () => {
+            const selectedClass = targetSelect.value === 'class'
+                ? classSelect.value.toLowerCase()
+                : studentSelect.selectedOptions[0]?.dataset.class || '';
+            scheduleSelect.value = '';
+            scheduleSelect.disabled = !selectedClass;
+            for (const option of scheduleSelect.options) {
+                if (option.value) option.hidden = option.dataset.class !== selectedClass;
+            }
+        };
+        targetSelect.addEventListener('change', updateRecipient);
+        studentSelect.addEventListener('change', updateScheduleOptions);
+        classSelect.addEventListener('change', updateScheduleOptions);
+        updateRecipient();
+    }
+</script>
+{% endblock %}

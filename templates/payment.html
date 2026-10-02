@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/img/logo.jpg">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+   
+        .content {
+            margin-top: 20px;
+        }
+        .form-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .form-heading {
+            margin-bottom: 20px;
+        }
+        .form-heading .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #002D62;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        .adam-button2 {
+            background-color: #002D62;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+           
+        }
+        .adam-button2:hover {
+            background-color: #002D62;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .rave-form-header {
+            border-bottom: 2px solid #002D62;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .small {
+            display: block;
+            margin-bottom: 10px;
+            color: red;
+        }
+        .loader {
+            display: none;
+            margin-left: 10px;
+        }
+        #rave-validation-name {
+            font-size: 15px;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #002D62;
+        }
+       
+        /* Style for loading indicator */
+        #loading {
+            display: none;
+            margin-left: 10px;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="content">
+        <div class="container">
+            <main class="main">
+                <div class="form-container">
+                    <div class="back-arrow">
+                        <a href="dashboard"><i class="fas fa-arrow-left"></i> Back</a>
+                    </div>
+                    <article id="post-4640" class="post-4640 page type-page status-publish hentry">
+                        <div class="entry-content">
+                            <div class='mailmunch-forms-before-post' style='display: none !important;'></div>
+                            <form version="1.0.0" enctype="multipart/form-data"  method="post" class="rave-form" novalidate>
+                                <div class="form-heading text-center rave-form-header">
+                                    <div class="title">School Fees</div>
+                                </div>
+                                {% if error_message %}
+                                <p style="color:red;">{{ error_message }}</p>
+                            {% endif %}
+                                <input type="hidden" name="action" value="kkd_pff_rave_submit_action">
+                                <input type="hidden" name="rave-form-id" value="6347"/>
+                                <input type="hidden" name="rave-user-id" value="0"/>
+                                <input type="hidden" name="rave-recur" value="no"/>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label>Full Name (Payer's Name)</label>
+                                        <input type="text" name="rave-fullname" placeholder="Full Name (Payer's Name)" required/>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label>Email</label>
+                                        <input type="email" name="rave-email" id="rave-email" placeholder="Email Address" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label>Amount (NGN)</label>
+                                        <input type="text" name="rave-amount" class="rave-number" placeholder="0" id="rave-amount"  required/>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label>REG.NO</label>
+                                        <input type="text" name="admission_id" id="admission_id" placeholder="Enter Admission Number" required>
+                                        <small>Student Name: <b id="student-name"></b></small>
+                                        <img id="loading" src="static/img/Iphone-spinner-2.gif" alt="Loading..." width="20" height="20"> <!-- Add a loading indicator -->
+                                    </div>
+                                </div>
+                            
+                               
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label>Phone Number</label>
+                                        <input type="text" name="Phone Number" id="PhoneNumber"/>
+                                    </div>
+                                </div>
+                               
+                                  
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <button type="submit"  class="adam-button2">Pay</button>
+                                    </div>
+                                </div>
+                               
+                            </form>
+                            
+                    </article>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            var typingTimer;
+            var doneTypingInterval = 500;  // Time in ms, 500ms after user stops typing
+
+            $('#admission_id').on('input', function() {
+                clearTimeout(typingTimer);
+                if ($('#admission_id').val()) {
+                    typingTimer = setTimeout(doneTyping, doneTypingInterval);
+                } else {
+                    $('#student-name').text('');
+                    $('#loading').hide();
+                }
+            });
+
+            function doneTyping() {
+                var admission_id = $('#admission_id').val();
+                if (admission_id.length > 0) {
+                    $('#loading').show();  // Show loading indicator
+                    $.ajax({
+                        url: '{{ url_for("get_username") }}',
+                        type: 'POST',
+                        data: {'admission_id': admission_id},
+                        success: function(response) {
+                            if (response.username) {
+                                $('#student-name').text(response.username);
+                            } else {
+                                $('#student-name').text('User not found');
+                            }
+                            $('#loading').hide();  // Hide loading indicator
+                        },
+                        error: function(xhr, status, error) {
+                            $('#student-name').text('User not found');
+                            $('#loading').hide();  // Hide loading indicator
+                        }
+                    });
+                } else {
+                    $('#student-name').text('');
+                    $('#loading').hide();  // Hide loading indicator if input is cleared
+                }
+            }
+        });
+    </script>
+</body>
+</html>

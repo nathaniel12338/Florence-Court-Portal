@@ -1,103 +1,174 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <!-- Required meta tags -->
+<head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Login</title>
-    <!-- plugins:css -->
-    <link rel="stylesheet" href="../../static/vendors/mdi/css/materialdesignicons.min.css">
-    <link rel="stylesheet" href="../../static/vendors/css/vendor.bundle.base.css">
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
-    <link rel="stylesheet" href="../../static/css/style.css">
-    <!-- End layout styles -->
-    <style>
-      /* Add this to your CSS file or within a <style> tag */
-      .error-flash {
-          color: red;
-      }
-
-    </style>
-   
-  </head>
-  <body>
-    <form method="post" action="/index">
-    <div class="container-scroller">
-      <div class="container-fluid page-body-wrapper full-page-wrapper">
-        <div class="content-wrapper d-flex align-items-center auth">
-          <div class="row flex-grow">
-            <div class="col-lg-4 mx-auto">
-              <div class="auth-form-light text-left p-5">
-                <div class="brand-logo">
-                  <!-- <img src="../../static/images/logo.svg"> -->
-                </div>
-
-                <!-- Flash messages section -->
-                <!-- Flash messages section -->
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-    <ul class="flashes">
-        {% for message in messages %}
-            {% if 'error' in message %}
-                <li style="color: red;">{{ message }}</li>
-            {% else %}
-                <li>{{ message }}</li>
-            {% endif %}
-        {% endfor %}
-    </ul>
-{% endif %}
-{% endwith %}
-
-
-                <h4>Hello! let's get started</h4>
-                <h6 class="font-weight-light">Sign in to continue.</h6>
-                <form class="pt-3">
-                  <div class="form-group">
-                    <input type="email" class="form-control form-control-lg" id="email" name="email" placeholder="email" required>
-                  </div>
-                  <div class="form-group">
-                    <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="Password" required>
-                  </div>
-                  <div class="mt-3">
-                    <button type="submit" class="btn btn-block btn-gradient-success btn-lg font-weight-medium auth-form-btn">SIGN IN</button>
-                  </div>
-                  <div class="my-2 d-flex justify-content-between align-items-center">
-                    <div class="form-check">
-                      <label class="form-check-label text-muted">
-                        <input type="checkbox" class="form-check-input"> Keep me signed in </label>
-                    </div>
-                    <a href="#" class="auth-link text-black">Forgot password?</a>
-                  </div>
-                 
-                  <div class="text-center mt-4 font-weight-light"> Don't have an account? <a href="javascript:void(0);" class="text-primary" onclick="redirectToStuden()">Create</a>
-                  </div>
-                </form>
-              </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#28166b">
+    <meta name="description" content="Florence Court Schools — learning, character and opportunity. Apply for admission or access the school portal.">
+    <title>Florence Court Schools | Welcome</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="contact-bar">
+        <div class="site-width contact-bar-inner">
+            <span>Ado-Ekiti, Ekiti State</span>
+            <div class="contact-links">
+                <a href="tel:+2349023454322">+234 902 345 4322</a>
+                <a href="mailto:florencecourt@gmail.com">florencecourt@gmail.com</a>
             </div>
-          </div>
         </div>
-        <!-- content-wrapper ends -->
-      </div>
-      <!-- page-body-wrapper ends -->
     </div>
-    </form>
+
+    <header class="site-header">
+        <div class="site-width header-inner">
+            <a class="brand" href="{{ url_for('index') }}" aria-label="Florence Court Schools home">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Florence Court Schools crest">
+                <span>
+                    <strong>Florence Court</strong>
+                    <small>International Schools</small>
+                </span>
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">
+                <span class="nav-toggle-icon" aria-hidden="true"></span>
+                <span class="sr-only">Toggle navigation</span>
+            </button>
+            <nav class="primary-nav" id="primary-navigation" aria-label="Main navigation">
+                <a href="#welcome">Home</a>
+                <a href="#about">About</a>
+                <a href="#school-services">School services</a>
+                <a href="#contact">Contact</a>
+                <a class="nav-login" href="{{ url_for('studentlogin') }}">Student portal</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section class="hero" id="welcome" aria-labelledby="hero-title">
+            <div class="hero-image" role="img" aria-label="Florence Court students standing together at school"></div>
+            <div class="hero-shade"></div>
+            <div class="site-width hero-content">
+                <p class="eyebrow"><span></span> Welcome to Florence Court</p>
+                <h1 id="hero-title">A place to learn.<br><em>A future to shape.</em></h1>
+                <p class="hero-description">We’re glad you’re here. Find the right school service, explore admissions, or sign in to the student portal.</p>
+                <div class="hero-actions">
+                    <a class="button button-light" href="{{ url_for('apply') }}">Apply for admission <span aria-hidden="true">→</span></a>
+                    <a class="button button-outline" href="#about">Discover our school</a>
+                </div>
+                <div class="hero-note"><span class="note-mark" aria-hidden="true">✦</span><span>Dedicated to excellence</span></div>
+            </div>
+            <a class="hero-scroll" href="#school-services" aria-label="Scroll to school services"><span></span></a>
+        </section>
+
+        {% if success_message %}
+        <div class="site-width message-wrap">
+            <p class="notice" role="status">{{ success_message }}</p>
+        </div>
+        {% endif %}
+
+        <section class="services-section" id="school-services" aria-labelledby="services-title">
+            <div class="site-width">
+                <div class="section-heading">
+                    <p class="eyebrow eyebrow-dark">How can we help?</p>
+                    <h2 id="services-title">Everything you need, <span>in one place.</span></h2>
+                    <p>Quick access to the services students, families and staff use most.</p>
+                </div>
+                <div class="service-grid">
+                    <a class="service-card service-card-featured" href="{{ url_for('apply') }}">
+                        <span class="service-icon" aria-hidden="true">↗</span>
+                        <span class="service-label">Admissions</span>
+                        <strong>Start your application</strong>
+                        <span class="service-description">Take the first step toward joining Florence Court.</span>
+                        <span class="service-action">Apply now <span aria-hidden="true">→</span></span>
+                    </a>
+                    <a class="service-card" href="{{ url_for('checkadmin') }}">
+                        <span class="service-icon" aria-hidden="true">✓</span>
+                        <span class="service-label">Application status</span>
+                        <strong>Track your application</strong>
+                        <span class="service-description">Check for updates using your application details.</span>
+                        <span class="service-action">Check status <span aria-hidden="true">→</span></span>
+                    </a>
+                    <a class="service-card" href="{{ url_for('studentlogin') }}">
+                        <span class="service-icon" aria-hidden="true">⌂</span>
+                        <span class="service-label">For students</span>
+                        <strong>Open student portal</strong>
+                        <span class="service-description">View school information, invoices, timetable and results.</span>
+                        <span class="service-action">Student sign in <span aria-hidden="true">→</span></span>
+                    </a>
+                    <a class="service-card" href="{{ url_for('schoolAdmin') }}">
+                        <span class="service-icon" aria-hidden="true">▣</span>
+                        <span class="service-label">For staff</span>
+                        <strong>Staff &amp; admin access</strong>
+                        <span class="service-description">Sign in to the secure school administration portal.</span>
+                        <span class="service-action">Staff sign in <span aria-hidden="true">→</span></span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section" id="about" aria-labelledby="about-title">
+            <div class="site-width about-layout">
+                <div class="about-image">
+                    <img src="{{ url_for('static', filename='img/Florida .jpg') }}" alt="Florence Court students together in their school uniforms">
+                    <div class="image-caption"><span class="caption-star" aria-hidden="true">✦</span><span>Florence Court Schools<br><strong>Dedicated to excellence</strong></span></div>
+                </div>
+                <div class="about-copy">
+                    <p class="eyebrow eyebrow-dark">A warm welcome</p>
+                    <h2 id="about-title">Growing through <span>learning and possibility.</span></h2>
+                    <p>At Florence Court Schools, we believe every learner deserves the opportunity to develop their abilities, build confidence and discover what they can achieve.</p>
+                    <p>Whether you are a current family or exploring our school for the first time, our online portal makes it easier to find the information and services you need.</p>
+                    <a class="text-link" href="{{ url_for('apply') }}">Explore admission <span aria-hidden="true">→</span></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="contact-section" id="contact" aria-labelledby="contact-title">
+            <div class="site-width contact-panel">
+                <div>
+                    <p class="eyebrow">We’re here to help</p>
+                    <h2 id="contact-title">Questions? Get in touch.</h2>
+                    <p>Contact the school office for help with admissions, portal access or general enquiries.</p>
+                </div>
+                <div class="contact-panel-actions">
+                    <a class="button button-light" href="mailto:florencecourt@gmail.com">Email the school <span aria-hidden="true">→</span></a>
+                    <a class="contact-phone" href="tel:+2349023454322">+234 902 345 4322</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-width footer-main">
+            <a class="brand footer-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+                <span><strong>Florence Court</strong><small>International Schools</small></span>
+            </a>
+            <p>P.M.B. 5363, Ado-Ekiti, Ekiti State</p>
+            <div class="footer-links">
+                <a href="{{ url_for('apply') }}">Admissions</a>
+                <a href="{{ url_for('checkadmin') }}">Application status</a>
+                <a href="{{ url_for('studentlogin') }}">Student portal</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="site-width">© {{ today.year if today is defined else 2026 }} Florence Court Schools. All rights reserved.</div>
+        </div>
+    </footer>
     <script>
-      function redirectToStuden() {
-          // Redirect to student.html
-          window.location.href = "/register?success_message=Successfully%20logged%20in";
-      }
-  </script>
-   <script>
-    function redirect() {
-        // Redirect to student.html
-        window.location.href = "/dashboard?success_message=Successfully%20logged%20in";
-    }
-</script>
-   
-  </body>
+        const navToggle = document.querySelector('.nav-toggle');
+        const primaryNavigation = document.getElementById('primary-navigation');
+        navToggle.addEventListener('click', () => {
+            const isOpen = navToggle.getAttribute('aria-expanded') === 'true';
+            navToggle.setAttribute('aria-expanded', String(!isOpen));
+            primaryNavigation.classList.toggle('nav-open', !isOpen);
+        });
+        primaryNavigation.addEventListener('click', (event) => {
+            if (event.target.closest('a')) {
+                navToggle.setAttribute('aria-expanded', 'false');
+                primaryNavigation.classList.remove('nav-open');
+            }
+        });
+    </script>
+</body>
 </html>

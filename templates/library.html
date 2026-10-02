@@ -1,0 +1,85 @@
+{% extends "student_portal_base.html" %}
+{% block page_title %}E-library{% endblock %}
+{% block breadcrumb %}E-library{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}">
+{% endblock %}
+{% block content %}
+<section class="library-hero" aria-labelledby="library-title">
+    <div class="library-hero-copy">
+        <span class="eyebrow">YOUR CLASSROOM, IN YOUR POCKET</span>
+        <h1 id="library-title">Class library</h1>
+        <p>Browse teacher-shared learning materials for {{ student.entry_class }} and read PDFs right here in your portal.</p>
+    </div>
+    <div class="library-hero-stat" aria-label="{{ resources|length }} available resources">
+        <span aria-hidden="true">▣</span>
+        <strong>{{ resources|length }}</strong>
+        <small>class material{{ '' if resources|length == 1 else 's' }}</small>
+    </div>
+</section>
+
+<section class="library-toolbar" aria-label="Library filters">
+    <div class="library-class-context">
+        <small>Showing materials for</small>
+        <strong>{{ student.entry_class }}</strong>
+    </div>
+    <label class="library-search-control" for="resource-search">
+        <span aria-hidden="true">⌕</span>
+        <input id="resource-search" type="search" placeholder="Search titles or topics" autocomplete="off">
+    </label>
+</section>
+
+{% if resources %}
+<div class="library-results-heading">
+    <h2>Learning materials</h2>
+    <p id="library-result-count">Showing {{ resources|length }} material{{ '' if resources|length == 1 else 's' }}</p>
+</div>
+<section class="library-resource-grid" id="resource-grid" aria-label="Library resources">
+    {% for resource in resources %}
+    <article class="library-resource-card" data-resource="{{ (resource.course_title ~ ' ' ~ (resource.description or '') ~ ' ' ~ resource.teacher.full_name)|lower }}">
+        <div class="library-resource-topline">
+            <span class="library-resource-type"><span aria-hidden="true">▤</span> PDF · {{ resource.class_name }}</span>
+            <time class="library-resource-date" datetime="{{ resource.uploaded_at.isoformat() }}">Added {{ resource.uploaded_at.strftime('%b %d, %Y') }}</time>
+        </div>
+        <h3>{{ resource.course_title }}</h3>
+        <p class="library-resource-description">{{ resource.description or 'A class learning resource shared by your teacher.' }}</p>
+        <p class="library-resource-teacher">Shared by {{ resource.teacher.full_name }}</p>
+        <div class="library-reader-label">Read material here</div>
+        <iframe class="library-resource-reader" src="{{ url_for('download_library_resource', resource_id=resource.id) }}" title="Read {{ resource.course_title }}" loading="lazy"></iframe>
+        <a class="library-reader-link" href="{{ url_for('download_library_resource', resource_id=resource.id) }}" target="_blank" rel="noopener">Open reader in a new tab <span aria-hidden="true">↗</span></a>
+    </article>
+    {% endfor %}
+</section>
+<section class="library-no-results" id="resource-empty" hidden role="status">
+    <strong>No matching materials</strong>
+    <p>Try a different title, topic, or teacher name.</p>
+</section>
+{% else %}
+<section class="library-empty-state" id="library-empty">
+    <span class="library-empty-icon" aria-hidden="true">▣</span>
+    <h2>Your class library is getting ready</h2>
+    <p>There are no materials assigned to {{ student.entry_class }} yet. When a teacher uploads a class resource, it will appear here for you to read.</p>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+    const resourceSearch = document.getElementById('resource-search');
+    const resourceCards = Array.from(document.querySelectorAll('.library-resource-card'));
+    const resourceEmpty = document.getElementById('resource-empty');
+    const resultCount = document.getElementById('library-result-count');
+    if (resourceSearch) {
+        resourceSearch.addEventListener('input', () => {
+            const query = resourceSearch.value.trim().toLocaleLowerCase();
+            let visibleCount = 0;
+            resourceCards.forEach((card) => {
+                const matches = card.dataset.resource.includes(query);
+                card.hidden = !matches;
+                if (matches) visibleCount += 1;
+            });
+            resourceEmpty.hidden = visibleCount > 0;
+            resultCount.textContent = `Showing ${visibleCount} material${visibleCount === 1 ? '' : 's'}`;
+        });
+    }
+</script>
+{% endblock %}

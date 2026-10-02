@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#142d4e">
+    <title>Online application | Florence Court International Schools</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apply.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="{{ url_for('index') }}" aria-label="Florence Court home">
+            <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Florence Court logo">
+            <span>
+                <strong>Florence Court</strong>
+                <small>International Schools</small>
+            </span>
+        </a>
+        <a class="home-link" href="{{ url_for('index') }}">Back to home</a>
+    </header>
+
+    <main>
+        <section class="page-intro" aria-labelledby="page-title">
+            <p class="eyebrow">ADMISSIONS</p>
+            <h1 id="page-title">Start your application</h1>
+            <p>Complete the student and guardian details below, then attach the required documents.</p>
+            <div class="form-note"><span aria-hidden="true">✦</span> Fields marked with <strong>*</strong> are required</div>
+        </section>
+
+        {% if error_message %}
+        <div class="alert" role="alert">{{ error_message }}</div>
+        {% endif %}
+
+        <form class="application-form" action="{{ url_for('apply') }}" method="post" enctype="multipart/form-data">
+            <section class="form-section" aria-labelledby="student-heading">
+                <div class="section-heading">
+                    <span class="step-number">01</span>
+                    <div>
+                        <h2 id="student-heading">Student details</h2>
+                        <p>Tell us about the student applying.</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="username">Username <span>*</span></label>
+                        <input id="username" name="username" type="text" placeholder="Choose a username" autocomplete="username" required>
+                    </div>
+                    <div class="field">
+                        <label for="firstName">First name <span>*</span></label>
+                        <input id="firstName" name="firstName" type="text" placeholder="Student's first name" autocomplete="given-name" required>
+                    </div>
+                    <div class="field">
+                        <label for="lastName">Last name <span>*</span></label>
+                        <input id="lastName" name="lastName" type="text" placeholder="Student's last name" autocomplete="family-name" required>
+                    </div>
+                    <div class="field">
+                        <label for="dob">Date of birth <span>*</span></label>
+                        <input id="dob" name="dob" type="date" required>
+                    </div>
+                    <div class="field">
+                        <label for="state_origin">State of origin <span>*</span></label>
+                        <select id="state_origin" name="state_origin" required>
+                            <option value="" disabled selected>Select state</option>
+                            {% for state in states %}
+                            <option value="{{ state }}">{{ state }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="gender">Gender <span>*</span></label>
+                        <select id="gender" name="gender" required>
+                            <option value="" disabled selected>Select gender</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="admission-heading">
+                <div class="section-heading">
+                    <span class="step-number">02</span>
+                    <div>
+                        <h2 id="admission-heading">Admission details</h2>
+                        <p>Choose the class and school session for entry.</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="entry_class">Class of entry <span>*</span></label>
+                        <select id="entry_class" name="entry_class" required>
+                            <option value="" disabled selected>Select class</option>
+                            <option value="Play Group">Play Group</option>
+                            <option value="Pre School">Pre School</option>
+                            <option value="KG 1">KG 1</option>
+                            <option value="KG 2">KG 2</option>
+                            <option value="KG 3">KG 3</option>
+                            <option value="Basic 1">Basic 1</option>
+                            <option value="Basic 2">Basic 2</option>
+                            <option value="Basic 3">Basic 3</option>
+                            <option value="Basic 4">Basic 4</option>
+                            <option value="Basic 5">Basic 5</option>
+                            <option value="Basic 6">Basic 6</option>
+                            <option value="Basic 7">Basic 7</option>
+                            <option value="Basic 8">Basic 8</option>
+                            <option value="Basic 9">Basic 9</option>
+                            <option value="SSS 1">SSS 1</option>
+                            <option value="SSS 2">SSS 2</option>
+                            <option value="SSS 3">SSS 3</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="entry_session">School session <span>*</span></label>
+                        <select id="entry_session" name="entry_session" required>
+                            <option value="" disabled {{ 'selected' if not selected_session else '' }}>Select school session</option>
+                            {% for school_session in school_sessions %}
+                            <option value="{{ school_session }}" {{ 'selected' if selected_session == school_session else '' }}>{{ school_session }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field field-wide">
+                        <label for="admission_id">5-digit application reference</label>
+                        <div class="reference-control">
+                            <input id="admission_id" name="admission_id" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" value="{{ numbers_str }}" readonly aria-describedby="reference-note copy-status">
+                            <button class="copy-button" id="copy-reference" type="button" aria-label="Copy application reference" title="Copy application reference">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                                    <rect x="8" y="8" width="12" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                                    <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3" stroke="currentColor" stroke-width="1.8"/>
+                                </svg>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <small id="reference-note" class="field-hint">Keep this 5-digit reference for your application records.</small>
+                        <small id="copy-status" class="copy-status" role="status" aria-live="polite"></small>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="guardian-heading">
+                <div class="section-heading">
+                    <span class="step-number">03</span>
+                    <div>
+                        <h2 id="guardian-heading">Parent or guardian</h2>
+                        <p>How can we contact the student's family?</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="guardian_name">Full name <span>*</span></label>
+                        <input id="guardian_name" name="guardian_name" type="text" placeholder="Parent or guardian's full name" autocomplete="name" required>
+                    </div>
+                    <div class="field">
+                        <label for="phone_number">Phone number <span>*</span></label>
+                        <input id="phone_number" name="phone_number" type="tel" placeholder="e.g. 08012345678" autocomplete="tel" required>
+                    </div>
+                    <div class="field">
+                        <label for="email">Email address <span>*</span></label>
+                        <input id="email" name="email" type="email" placeholder="name@example.com" autocomplete="email" required>
+                    </div>
+                    <div class="field">
+                        <label for="address">Home address <span>*</span></label>
+                        <input id="address" name="address" type="text" placeholder="Street, area and city" autocomplete="street-address" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="documents-heading">
+                <div class="section-heading">
+                    <span class="step-number">04</span>
+                    <div>
+                        <h2 id="documents-heading">Supporting documents</h2>
+                        <p>Upload a clear scan or photo of each document. JPG, PNG, or PDF files are accepted.</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="field upload-field">
+                        <label for="birth_certificate">Birth certificate or declaration of age <span>*</span></label>
+                        <input id="birth_certificate" name="birth_certificate" type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+                    </div>
+                    <div class="field upload-field">
+                        <label for="recent_result">Most recent school result <span>*</span></label>
+                        <input id="recent_result" name="recent_result" type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+                    </div>
+                    <div class="field upload-field field-wide">
+                        <label for="payment_evidence">Application fee payment evidence <span>*</span></label>
+                        <input id="payment_evidence" name="payment_evidence" type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-footer" aria-label="Submit application">
+                <label class="terms" for="terms">
+                    <input type="checkbox" name="terms" id="terms" required>
+                    <span>I confirm that the information in this application is accurate.</span>
+                </label>
+                <button class="submit-button" type="submit">Submit application <span aria-hidden="true">→</span></button>
+                <p class="privacy-note">Please review your details before submitting your application.</p>
+            </section>
+        </form>
+    </main>
+
+    <footer class="site-footer">© Florence Court International Schools</footer>
+    <script>
+        const copyButton = document.getElementById('copy-reference');
+        const referenceInput = document.getElementById('admission_id');
+        const copyStatus = document.getElementById('copy-status');
+
+        copyButton.addEventListener('click', async () => {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(referenceInput.value);
+                } else {
+                    referenceInput.select();
+                    referenceInput.setSelectionRange(0, referenceInput.value.length);
+                    if (!document.execCommand('copy')) {
+                        throw new Error('Copy command was rejected.');
+                    }
+                    referenceInput.setSelectionRange(0, 0);
+                }
+                copyStatus.textContent = 'Reference copied.';
+                copyButton.querySelector('span').textContent = 'Copied';
+            } catch (error) {
+                copyStatus.textContent = 'Could not copy automatically. Select the reference and copy it manually.';
+            }
+        });
+    </script>
+    <div class="page-loading" id="page-loading" role="status" aria-live="polite" hidden>
+        <span class="page-loading-spinner" aria-hidden="true"></span><span>Loading page…</span>
+    </div>
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+</body>
+</html>

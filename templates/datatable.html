@@ -1,0 +1,108 @@
+{% extends "admin_base.html" %}
+{% block title %}Result approvals{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div><p class="admin-eyebrow">ACADEMICS</p><h1>Class results</h1><p>Review and approve each course marksheet independently. Approval locks only that subject for its class and term.</p></div>
+</header>
+<form class="result-class-filter" method="get" action="{{ url_for('datatable') }}">
+    <label for="result-class">Class</label>
+    <select id="result-class" name="class">
+        <option value="">All classes</option>
+        {% for class_key, class_name in result_classes.items() %}
+        <option value="{{ class_key }}" {{ 'selected' if class_filter == class_key else '' }}>{{ class_name }}</option>
+        {% endfor %}
+    </select>
+    <input type="hidden" name="view" value="{{ current_view }}">
+    <button class="admin-button secondary" type="submit">Show results</button>
+</form>
+<nav class="result-tabs" aria-label="Result status">
+    <a class="{{ 'active' if current_view == 'pending' else '' }}" href="{{ url_for('datatable', view='pending', **{'class': class_filter}) }}">Needs review <span>{{ pending_count }}</span></a>
+    <a class="{{ 'active' if current_view == 'approved' else '' }}" href="{{ url_for('datatable', view='approved', **{'class': class_filter}) }}">Approved archive <span>{{ approved_count }}</span></a>
+</nav>
+{% if result_groups %}
+<div class="admin-grid single">
+    {% for group in result_groups %}
+    <section class="admin-panel result-card">
+        <div class="admin-panel-heading">
+            <div><h2>{{ group.class_name }} · {{ group.term|title }} term</h2><p class="admin-muted">{{ group.subjects|length }} courses · {{ group.students|length }} students · {{ group.completed_count }} of {{ group.required_count }} course marksheets complete</p></div>
+            {% if group.approved %}<span class="admin-badge success">Approved {{ group.approval.approved_at.strftime('%b %d, %Y') }}</span>
+            {% elif group.missing_count == 0 and group.required_count %}<span class="admin-badge success">Ready for approval</span>
+            {% else %}<span class="admin-badge warning">{{ group.missing_count }} marksheets incomplete</span>{% endif %}
+        </div>
+        <div class="admin-table-wrap result-marks-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Course</th><th>Student</th><th>CA 1</th><th>CA 2</th><th>CA 3</th><th>Exam</th><th>Total</th><th>Grade</th><th>Teacher</th></tr></thead>
+                <tbody>
+                {% for course in group.course_results %}
+                    {% for grade in course.grades %}
+                    <tr>
+                        <td><strong>{{ course.subject }}</strong></td>
+                        <td>{{ grade.student.firstName }} {{ grade.student.lastName }}</td>
+                        <td>{{ grade.ca1_score|score }}</td>
+                        <td>{{ grade.ca2_score|score }}</td>
+                        <td>{{ grade.ca3_score|score }}</td>
+                        <td>{{ grade.exam_score|score }}</td>
+                        <td><strong>{{ grade.total_score|score }}</strong></td>
+                        <td>{{ grade.total_score|result_grade }}</td>
+                        <td>{{ grade.teacher.full_name }}</td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="approval-course-list" aria-label="Course approval status">
+        {% for course in group.course_results %}
+            <section class="approval-course-row">
+                <div class="approval-course-info">
+                    <strong>{{ course.subject }}</strong>
+                    <span>{{ course.completed_count }} of {{ course.required_count }} student marks complete</span>
+                    {% if course.approved %}<span class="admin-badge success">Approved {{ course.approval.approved_at.strftime('%b %d, %Y') }}</span>
+                    {% elif course.missing_count == 0 and course.required_count %}<span class="admin-badge success">Ready for approval</span>
+                    {% else %}<span class="admin-badge warning">{{ course.missing_count }} incomplete</span>{% endif %}
+                </div>
+            {% if not course.approved %}
+                {% if course.missing_count == 0 and course.required_count %}
+                <form method="post" action="{{ url_for('approve_class_results') }}" onsubmit="return confirm('Approve and publish {{ course.subject }} results for {{ group.class_name }} in {{ group.term }} term?')">
+                    <input type="hidden" name="timetable_class" value="{{ group.class_key }}">
+                    <input type="hidden" name="term" value="{{ group.term }}">
+                    <input type="hidden" name="subject" value="{{ course.subject }}">
+                    <button class="admin-button" type="submit">Approve and publish {{ course.subject }}</button>
+                </form>
+                {% else %}
+                <p class="admin-muted">The teacher must submit an exam and at least one CA mark for every student before approval.</p>
+                {% endif %}
+            {% endif %}
+            </section>
+        {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+</div>
+{% else %}
+<section class="admin-panel"><div class="admin-empty">{% if current_view == 'approved' %}No approved results are in the archive yet.{% else %}No class results are waiting for approval.{% endif %}</div></section>
+{% endif %}
+{% endblock %}
+{% block head %}
+<style>
+.result-class-filter{display:flex;align-items:end;gap:9px;margin:0 0 14px}
+.result-class-filter label{display:grid;gap:5px;color:var(--admin-muted);font-size:11px;font-weight:650}
+.result-class-filter select{min-width:190px;min-height:38px;padding:7px 10px;border:1px solid var(--admin-border);border-radius:7px;background:#fff;color:var(--admin-ink);font:inherit;font-size:12px}
+.result-class-filter .admin-button{min-height:38px}
+.result-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.result-tabs a{display:flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid var(--admin-border);border-radius:9px;background:#fff;color:#42536a;font-size:12px;font-weight:650;text-decoration:none}
+.result-tabs a.active{border-color:#cadcec;background:#edf4fb;color:var(--admin-blue)}
+.result-tabs span{display:inline-grid;min-width:22px;height:22px;place-items:center;border-radius:99px;background:#f0f3f7;font-size:11px}
+.result-card{min-width:0}
+.result-marks-wrap{margin-top:14px}
+.approval-course-list{display:grid;margin-top:16px;border-top:1px solid var(--admin-border)}
+.approval-course-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 2px;border-bottom:1px solid var(--admin-border)}
+.approval-course-info{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.approval-course-info>strong{color:var(--admin-navy);font-size:12px}
+.approval-course-info>span:not(.admin-badge),.approval-course-row p{color:var(--admin-muted);font-size:11px}
+.approval-course-row p{margin:0}
+.approval-course-row .admin-button{white-space:nowrap}
+@media(max-width:520px){.result-class-filter{align-items:stretch;flex-direction:column}.result-class-filter select,.result-class-filter .admin-button{width:100%}}
+@media(max-width:760px){.approval-course-row{align-items:flex-start;flex-direction:column}.result-marks-wrap table{min-width:900px}}
+</style>
+{% endblock %}

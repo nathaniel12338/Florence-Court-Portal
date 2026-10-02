@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#142d4e">
+    <title>Application update | Florence Court</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account_pages.css') }}">
+</head>
+<body>
+    <main class="status-page">
+        <header class="status-header">
+            <a class="account-brand status-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="">
+                <span><strong>Florence Court</strong><small>International Schools</small></span>
+            </a>
+            <a class="status-home-link" href="{{ url_for('index') }}">School home</a>
+        </header>
+        <section class="status-card">
+            <div class="status-mark {{ 'status-mark-approved' if is_admitted else 'status-mark-pending' }}" aria-hidden="true">{{ '✓' if is_admitted else '…' }}</div>
+            <span class="account-eyebrow account-eyebrow-dark">APPLICATION UPDATE</span>
+            <h1>{{ 'Admission approved' if is_admitted else 'Application received' }}</h1>
+            <p class="status-intro">
+                {% if is_admitted %}
+                Congratulations, {{ candidate.firstName }}. Your admission has been approved. Your student portal is ready.
+                {% else %}
+                Thank you, {{ candidate.firstName }}. The school has received your application and it is waiting for review.
+                {% endif %}
+            </p>
+            <div class="status-pill {{ 'status-pill-approved' if is_admitted else 'status-pill-pending' }}">{{ 'Approved' if is_admitted else 'Under review' }}</div>
+            <dl class="status-details">
+                <div><dt>Applicant</dt><dd>{{ candidate.firstName }} {{ candidate.lastName }}</dd></div>
+                <div><dt>Application reference</dt><dd>{{ candidate.admission_id }}</dd></div>
+                <div><dt>Entry class</dt><dd>{{ candidate.entry_class }}</dd></div>
+                <div><dt>School session</dt><dd>{{ candidate.entry_session }}</dd></div>
+            </dl>
+            {% if is_admitted %}
+            <a class="account-submit status-action" href="{{ url_for('studentlogin') }}">Go to student sign in <span aria-hidden="true">→</span></a>
+            <p class="status-note">Sign in with the application email address and admission number shown above.</p>
+            {% else %}
+            <p class="status-note">We’ll contact you by email after the school reviews your application. You can check again later using the same details.</p>
+            {% endif %}
+            <a class="status-check-again" href="{{ url_for('checkadmin') }}">Check another application</a>
+        </section>
+        <footer class="status-footer">Florence Court International Schools · Ado-Ekiti</footer>
+    </main>
+</body>
+</html>

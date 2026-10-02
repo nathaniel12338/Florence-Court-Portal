@@ -1,0 +1,70 @@
+{% extends "student_portal_base.html" %}
+{% block page_title %}My biodata{% endblock %}
+{% block breadcrumb %}Biodata{% endblock %}
+{% block content %}
+<header class="invoice-page-heading">
+    <div><span class="eyebrow">STUDENT PROFILE</span><h1>My biodata</h1><p>Review the personal and guardian information held by the school.</p></div>
+    <a class="button button-outline" href="{{ url_for('passport') }}">Manage passport photo <span>→</span></a>
+</header>
+<section class="student-page-card">
+    <div class="profile-identity">
+        <img src="{{ student_passport_url(student) }}" alt="{{ student.firstName }} {{ student.lastName }} passport photo">
+        <div class="student-card-heading"><div><span class="eyebrow">STUDENT DETAILS</span><h2>{{ student.firstName }} {{ student.lastName }}</h2></div><span class="invoice-status">{{ student.entry_class }}</span></div>
+    </div>
+    <dl class="biodata-grid">
+        <div><dt>Admission number</dt><dd>{{ student.admission_id }}</dd></div>
+        <div><dt>Username</dt><dd>{{ student.username }}</dd></div>
+        <div><dt>Date of birth</dt><dd>{{ student.dob or 'Not provided' }}</dd></div>
+        <div><dt>Gender</dt><dd>{{ student.gender or 'Not provided' }}</dd></div>
+        <div><dt>State of origin</dt><dd>{{ student.state_origin or 'Not provided' }}</dd></div>
+        <div><dt>Class of entry</dt><dd>{{ student.entry_class }}</dd></div>
+        <div><dt>Entry session</dt><dd>{{ student.entry_session }}</dd></div>
+        <div><dt>Student account email</dt><dd>{{ student.email }}</dd></div>
+        <div><dt>Guardian name</dt><dd>{{ student.guardian_name or 'Not provided' }}</dd></div>
+        <div><dt>Guardian phone</dt><dd>{{ student.phone_number or 'Not provided' }}</dd></div>
+        <div class="biodata-address"><dt>Home address</dt><dd>{{ student.address or 'Not provided' }}</dd></div>
+    </dl>
+    <p class="student-notice">Need to correct a detail? Please contact the school office so your student record can be updated safely.</p>
+</section>
+<section class="student-page-card theme-settings">
+    <div><span class="eyebrow">PERSONALISE YOUR PORTAL</span><h2>Appearance</h2><p>Choose how the student portal looks on this device.</p></div>
+    <label for="portal-theme">Theme
+        <select id="portal-theme" name="theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="system">Use device setting</option>
+        </select>
+    </label>
+</section>
+{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+.profile-identity{display:flex;align-items:center;gap:17px;margin-bottom:15px}
+.profile-identity>img{width:82px;height:96px;border:1px solid var(--portal-border);border-radius:10px;background:var(--portal-canvas);object-fit:cover}
+.profile-identity .student-card-heading{flex:1;margin:0}
+.theme-settings{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.theme-settings h2{margin:4px 0;color:var(--portal-ink);font-family:Manrope,sans-serif;font-size:17px}
+.theme-settings p{margin:0;color:var(--portal-muted);font-size:11px}
+.theme-settings label{display:grid;gap:6px;color:var(--portal-ink);font-size:11px;font-weight:700}
+.theme-settings select{min-width:190px;min-height:40px;padding:8px 11px;border:1px solid var(--portal-border);border-radius:8px;background:var(--portal-white);color:var(--portal-ink);font:inherit}
+@media(max-width:540px){.profile-identity{align-items:flex-start}.profile-identity>img{width:68px;height:80px}.theme-settings{align-items:stretch;flex-direction:column}.theme-settings select{width:100%}}
+</style>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    const themeSelect = document.getElementById('portal-theme');
+    const savedTheme = localStorage.getItem('student-portal-theme') || 'light';
+    if (themeSelect) {
+        themeSelect.value = ['light', 'dark', 'system'].includes(savedTheme) ? savedTheme : 'light';
+        themeSelect.addEventListener('change', () => {
+            localStorage.setItem('student-portal-theme', themeSelect.value);
+            const theme = themeSelect.value === 'system'
+                ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : themeSelect.value;
+            document.documentElement.dataset.portalTheme = theme;
+        });
+    }
+</script>
+{% endblock %}

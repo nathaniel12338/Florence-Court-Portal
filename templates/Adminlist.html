@@ -1,0 +1,115 @@
+{% extends "admin_base.html" %}
+{% block title %}Admissions{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div><p class="admin-eyebrow">STUDENT ENROLMENT</p><h1>Admission applications</h1><p>Review pending applications. Accepted students move to the student directory and can sign in to the portal.</p></div>
+    <span class="admin-badge">{{ users|length }} waiting for review</span>
+</header>
+<section class="admin-panel">
+    <div class="admin-panel-heading">
+        <h2>Applications</h2>
+        <input id="searchInput" class="admin-search application-search" type="search" placeholder="Search name, class or email" aria-label="Search admission applications">
+    </div>
+    {% if users %}
+    <div class="application-list" id="application-list">
+        {% for user in users %}
+        <article class="application-card">
+            <div class="application-head">
+                <div><h3>{{ user.firstName }} {{ user.lastName }}</h3><p>{{ user.email }} · {{ user.entry_class }} · {{ user.entry_session }}</p></div>
+                <span class="admin-badge warning">Awaiting review</span>
+            </div>
+            <details>
+                <summary>Review application details</summary>
+                <dl class="application-details">
+                    <div><dt>Username</dt><dd>{{ user.username }}</dd></div>
+                    <div><dt>Date of birth</dt><dd>{{ user.dob }}</dd></div>
+                    <div><dt>Gender</dt><dd>{{ user.gender }}</dd></div>
+                    <div><dt>State of origin</dt><dd>{{ user.state_origin }}</dd></div>
+                    <div><dt>Admission reference</dt><dd>{{ user.admission_id }}</dd></div>
+                    <div><dt>Guardian</dt><dd>{{ user.guardian_name }}</dd></div>
+                    <div><dt>Phone</dt><dd>{{ user.phone_number }}</dd></div>
+                    <div><dt>Address</dt><dd>{{ user.address }}</dd></div>
+                    <div><dt>Documents</dt><dd>
+                        <a href="{{ url_for('uploaded_file', filename=user.birth_certificate) }}" target="_blank" rel="noopener">Birth certificate</a> ·
+                        <a href="{{ url_for('uploaded_file', filename=user.recent_result) }}" target="_blank" rel="noopener">School result</a> ·
+                        <a href="{{ url_for('uploaded_file', filename=user.payment_evidence) }}" target="_blank" rel="noopener">Payment evidence</a>
+                    </dd></div>
+                </dl>
+                <form class="accept-form" action="{{ url_for('Adminlist') }}" method="post">
+                    <input type="hidden" name="email" value="{{ user.email }}">
+                    <button class="admin-button accept-button" type="submit">Accept applicant</button>
+                    <span class="accept-status" role="status" aria-live="polite"></span>
+                </form>
+            </details>
+        </article>
+        {% endfor %}
+    </div>
+    <div class="admin-empty" id="no-search-results" hidden>No applications match that search.</div>
+    {% else %}
+    <div class="admin-empty">There are no admission applications to review.</div>
+    {% endif %}
+</section>
+{% endblock %}
+{% block head %}
+<style>
+.application-list{display:grid;gap:12px}
+.application-card details{padding-top:11px;border-top:1px solid #edf0f4}
+.application-card summary{color:#2765a2;font-size:12px;font-weight:650;cursor:pointer}
+.application-details{margin:15px 0}
+.accept-form{display:flex;align-items:center;gap:12px}
+.accept-button{min-height:37px}
+.accept-status{font-size:12px}
+.accept-status.error{color:#913f36}
+@media(max-width:540px){.accept-form{align-items:stretch;flex-direction:column}.application-details{grid-template-columns:1fr 1fr}}
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const applicationCards = [...document.querySelectorAll('.application-card')];
+    const noSearchResults = document.getElementById('no-search-results');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLocaleLowerCase();
+            let visibleCount = 0;
+            applicationCards.forEach((card) => {
+                const matches = card.textContent.toLocaleLowerCase().includes(query);
+                card.hidden = !matches;
+                if (matches) visibleCount += 1;
+            });
+            noSearchResults.hidden = visibleCount !== 0;
+        });
+    }
+
+    document.querySelectorAll('.accept-form').forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = form.querySelector('button');
+            const status = form.querySelector('.accept-status');
+            button.disabled = true;
+            status.className = 'accept-status';
+            status.textContent = 'Accepting applicant…';
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Could not accept this applicant.');
+                form.closest('.application-card').remove();
+                const remaining = document.querySelectorAll('.application-card').length;
+                document.querySelector('.admin-page-heading .admin-badge').textContent = `${remaining} waiting for review`;
+                if (remaining === 0) {
+                    document.getElementById('application-list').innerHTML = '<div class="admin-empty">There are no admission applications to review.</div>';
+                }
+            } catch (error) {
+                button.disabled = false;
+                status.classList.add('error');
+                status.textContent = error.message;
+            }
+        });
+    });
+</script>
+{% endblock %}

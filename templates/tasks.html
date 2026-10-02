@@ -1,0 +1,49 @@
+{% extends "admin_base.html" %}
+{% block title %}Staff tasks{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div><p class="admin-eyebrow">PEOPLE</p><h1>Staff tasks</h1><p>Assign work and follow its progress.</p></div>
+    <a class="admin-button secondary" href="{{ url_for('staff_management') }}">Manage staff</a>
+</header>
+<div class="admin-grid">
+    <section class="admin-panel">
+        <div class="admin-panel-heading"><h2>Assign a task</h2></div>
+        {% if staff_members %}
+        <form class="admin-form" method="post" action="{{ url_for('tasks') }}">
+            <div><label for="title">Task title</label><input id="title" name="title" maxlength="160" required></div>
+            <div><label for="description">Instructions</label><textarea id="description" name="description" maxlength="5000" required></textarea></div>
+            <div><label for="staff_id">Assign to</label><select id="staff_id" name="staff_id" required><option value="">Choose a staff member</option>{% for member in staff_members %}<option value="{{ member.id }}">{{ member.full_name }} · {{ member.staff_id }}</option>{% endfor %}</select></div>
+            <div><label for="due_date">Due date <span class="admin-muted">(optional)</span></label><input id="due_date" name="due_date" type="date"></div>
+            <button class="admin-button" type="submit">Assign task</button>
+        </form>
+        {% else %}
+        <p class="admin-muted">Add a staff account before assigning tasks.</p>
+        <a class="admin-button" href="{{ url_for('staff_management') }}">Add staff</a>
+        {% endif %}
+    </section>
+    <section class="admin-panel">
+        <div class="admin-panel-heading"><h2>Assigned tasks</h2><span class="admin-badge">{{ assigned_tasks|length }} total</span></div>
+        {% if assigned_tasks %}
+        <div class="task-list">
+            {% for task in assigned_tasks %}
+            <article class="task-card">
+                <div class="task-card-heading"><h3>{{ task.title }}</h3><span class="admin-badge {{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else '' }}">{{ task.status|replace('_', ' ')|title }}</span></div>
+                <p>{{ task.description }}</p>
+                <div class="admin-muted task-meta">Assigned to {{ task.assigned_staff.full_name }} · {% if task.due_date %}Due {{ task.due_date.strftime('%b %d, %Y') }}{% else %}No due date{% endif %} · Created {{ task.created_at.strftime('%b %d, %Y') }}</div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}<div class="admin-empty">No tasks have been assigned yet.</div>{% endif %}
+    </section>
+</div>
+{% endblock %}
+{% block head %}
+<style>
+.task-list{display:grid;gap:11px}
+.task-card{padding:15px;border:1px solid var(--admin-border);border-radius:10px}
+.task-card-heading{display:flex;justify-content:space-between;gap:12px}
+.task-card h3{margin:0;font-size:15px}
+.task-card p{white-space:pre-wrap}
+.task-meta{font-size:12px}
+</style>
+{% endblock %}

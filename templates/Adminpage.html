@@ -1,0 +1,85 @@
+{% extends "admin_base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<header class="admin-page-heading">
+    <div>
+        <p class="admin-eyebrow">SCHOOL OPERATIONS</p>
+        <h1>Good day, Admin</h1>
+        <p>Your school activity and the tools you use most, all in one place.</p>
+    </div>
+    <div class="admin-actions">
+        <a class="admin-button" href="{{ url_for('tasks') }}">Assign a task</a>
+        <a class="admin-button secondary" href="{{ url_for('Adminlist') }}">Review admissions</a>
+    </div>
+</header>
+
+<section class="admin-stat-grid" aria-label="School statistics">
+    <article class="admin-stat">
+        <div class="admin-stat-label">Pending applications</div>
+        <div class="admin-stat-value">{{ total_students }}</div>
+        <div class="admin-stat-note">Waiting for an admission decision</div>
+    </article>
+    <article class="admin-stat">
+        <div class="admin-stat-label">Admitted students</div>
+        <div class="admin-stat-value">{{ admitted_students }}</div>
+        <div class="admin-stat-note">Accounts accepted to the school</div>
+    </article>
+    <article class="admin-stat">
+        <div class="admin-stat-label">Results ready to approve</div>
+        <div class="admin-stat-value">{{ ready_results_count }}</div>
+        <div class="admin-stat-note">Complete class-and-term marksheets awaiting review</div>
+    </article>
+    <article class="admin-stat">
+        <div class="admin-stat-label">Active staff</div>
+        <div class="admin-stat-value">{{ active_staff }}</div>
+        <div class="admin-stat-note">Staff with portal access</div>
+    </article>
+</section>
+
+<div class="admin-grid">
+    <section class="admin-panel">
+        <div class="admin-panel-heading">
+            <h2>Get things done</h2>
+            <span class="admin-muted">Quick links</span>
+        </div>
+        <div class="admin-grid">
+            <a class="admin-shortcut" href="{{ url_for('Adminlist') }}"><span class="shortcut-icon">01</span><span><strong>Review admissions</strong><small>View applications and accept new students</small></span><span class="shortcut-arrow">→</span></a>
+            <a class="admin-shortcut" href="{{ url_for('student_management') }}"><span class="shortcut-icon">02</span><span><strong>Student directory</strong><small>View admitted students and change class placement</small></span><span class="shortcut-arrow">→</span></a>
+            <a class="admin-shortcut" href="{{ url_for('table1') }}"><span class="shortcut-icon">03</span><span><strong>Publish timetable</strong><small>Set class, subject, teacher and schedule</small></span><span class="shortcut-arrow">→</span></a>
+            <a class="admin-shortcut" href="{{ url_for('datatable') }}"><span class="shortcut-icon">04</span><span><strong>Course results</strong><small>Review results uploaded by teachers</small></span><span class="shortcut-arrow">→</span></a>
+            <a class="admin-shortcut" href="{{ url_for('fee_management') }}"><span class="shortcut-icon">05</span><span><strong>Student fees</strong><small>Set class rates and issue or edit invoices</small></span><span class="shortcut-arrow">→</span></a>
+            <a class="admin-shortcut" href="{{ url_for('staff_management') }}"><span class="shortcut-icon">06</span><span><strong>Manage staff</strong><small>Create and review staff accounts</small></span><span class="shortcut-arrow">→</span></a>
+            <a class="admin-shortcut" href="{{ url_for('tasks') }}"><span class="shortcut-icon">07</span><span><strong>Staff tasks</strong><small>Assign work and check progress</small></span><span class="shortcut-arrow">→</span></a>
+        </div>
+    </section>
+    <section class="admin-panel">
+        <div class="admin-panel-heading">
+            <div><h2>Results awaiting approval</h2><p class="admin-muted">Review the complete marksheets submitted by teachers.</p></div>
+            <a href="{{ url_for('datatable', view='pending') }}">All results →</a>
+        </div>
+        {% if pending_results %}
+        <div class="result-queue">
+            {% for group in pending_results %}
+            <article class="result-queue-item">
+                <div><strong>{{ group.class_name }} · {{ group.term|title }} term</strong><small>{{ group.completed_count }}/{{ group.required_count }} course marksheets complete · {{ group.students|length }} students</small></div>
+                {% if group.missing_count == 0 and group.required_count %}<span class="admin-badge success">Ready</span>{% else %}<span class="admin-badge warning">{{ group.missing_count }} remaining</span>{% endif %}
+                <a class="admin-button secondary" href="{{ url_for('datatable', view='pending') }}">Review</a>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="admin-empty">No results are waiting for review. Submitted class marksheets will appear here.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+{% block head %}
+<style>
+.result-queue{display:grid;gap:10px}
+.result-queue-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px;border:1px solid var(--admin-border);border-radius:9px}
+.result-queue-item strong,.result-queue-item small{display:block}
+.result-queue-item strong{color:var(--admin-navy);font-size:12px}
+.result-queue-item small{margin-top:3px;color:var(--admin-muted);font-size:11px}
+@media(max-width:520px){.result-queue-item{grid-template-columns:minmax(0,1fr) auto}.result-queue-item .admin-button{grid-column:1/-1;width:100%}}
+</style>
+{% endblock %}

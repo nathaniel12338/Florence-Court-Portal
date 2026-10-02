@@ -1,86 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Check Result</title>
-  <!-- Favicon -->
-  <link rel="shortcut icon" href="./img/svg/logo.svg" type="image/x-icon">
-  <!-- Custom styles -->
-  <link rel="stylesheet" href="static/css/style.min.css">
-</head>
-
-<body>
-  <form class="sign-up-form form" method="post" action="/checkresult">
-  <div class="layer"></div>
-<main class="page-center">
-  <article class="sign-up">
-    <h1 class="sign-up__title">Check Result</h1>
-    <p class="sign-up__subtitle">Each Exam Number can be used with only one result for a specific number of views</p>
-    <!-- <form class="sign-up-form form" action="" method=""> -->
-      <label class="form-label-wrapper">
-        <p class="form-label">Examination Number</p>
-        <input class="form-input" type="text" placeholder="Examination Number" required>
-      </label>
-      <form>
-        <label class="form-label-wrapper">
-            <p class="form-label">Examination Year</p>
-            <select class="form-input" required>
-                <option value="---">---</option>
-                <option value="2023">2023</option>
-                <option value="2022">2022</option>
-                <option value="2022">2021</option>
-                <option value="2022">2020</option>
-                <option value="2022">2019</option>
-                <option value="2022">2018</option>
-                <option value="2022">2017</option>
-                <option value="2022">2016</option>
-                <option value="2022">2015</option>
-                <option value="2022">2014</option>
-                <option value="2022">2013</option>
-                <option value="2022">2012</option>
-                <option value="2022">2011</option>
-                <option value="2022">2010</option>
-                <option value="2022">2009</option>
-                <!-- Add more options as needed -->
-            </select>
-        </label>
-    
-        <label class="form-label-wrapper">
-            <p class="form-label">Select Class</p>
-            <select class="form-input" required>
-              <option value="---">---</option>
-                <option value="jss2">JSS2</option>
-                <option value="jss2">JSS3</option>
-                <option value="jss2">SSS1</option>
-                <option value="jss2">SSS2</option>
-                <option value="jss2">SSS3</option>
-                <!-- Add more options as needed -->
-            </select>
-        </label>
-    
-        <!-- Add "Cancel" and "Submit" buttons -->
-        <div style="display: flex; justify-content: space-between;">
-          <a href="/dashboard" style="flex: 1; text-align: center; padding: 10px 20px; font-size: 16px; border-radius: 3px; text-decoration: none; background-color: #fff; color: #00ffcc; border: 2px solid #00ffcc;">Cancel</a>
-          
-          <button type="submit" style="flex: 1; text-align: center; padding: 10px 20px; font-size: 16px; border-radius: 3px; text-decoration: none; background-color: #00ffcc; color: #fff; width: 20px;" >Check</button>
-      </div>
-      
-      
+{% extends "student_portal_base.html" %}
+{% block page_title %}External results{% endblock %}
+{% block breadcrumb %}External results{% endblock %}
+{% block content %}
+<header class="invoice-page-heading">
+    <div><span class="eyebrow">EXAMINATION RECORDS</span><h1>External results</h1><p>Search for an examination result PDF published by the school.</p></div>
+</header>
+<section class="student-page-card external-result-card">
+    <span class="invoice-count-icon">▧</span>
+    <h2>Find an examination result</h2>
+    <p>Enter the examination or registration number printed on the result and select the examination year.</p>
+    <form class="student-form external-result-form" method="post" action="{{ url_for('check_result') }}">
+        <label for="registrationnumber">Examination / registration number</label>
+        <input id="registrationnumber" name="registrationnumber" type="text" maxlength="80" autocomplete="off" required>
+        <label for="examyear">Examination year</label>
+        <input id="examyear" name="examyear" type="number" min="1900" max="{{ current_year + 1 }}" step="1" placeholder="e.g. 2025" required>
+        <button class="button invoice-pay-button" type="submit">Search result</button>
     </form>
-    <script>
-      function  dashboard() {
-           // Redirect to student.html
-           window.location.href = "/dashboard?success_message=Successfully%20logged%20in";
-       }
- 
-   </script>
-    
-  </article>
-</main>
-
-</body>
-
-</html>
+</section>
+{% endblock %}
