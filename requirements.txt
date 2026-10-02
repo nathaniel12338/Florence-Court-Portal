@@ -1,7 +1,7 @@
 Flask>=3.1,<4
 Flask-Bcrypt>=1.0.1,<2
 Flask-SQLAlchemy>=3.1,<4
-mysqlclient>=2.2,<3
+PyMySQL>=1.1,<2
 pdfkit>=1.0,<2
 PyPDF2>=3.0,<4
 requests>=2.31,<3

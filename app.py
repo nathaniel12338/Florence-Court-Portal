@@ -89,6 +89,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/studentportal'
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     os.environ.get('DATABASE_URL') or app.config['SQLALCHEMY_DATABASE_URI']
 )
+database_url = make_url(app.config['SQLALCHEMY_DATABASE_URI'])
+if database_url.drivername == 'mysql':
+    database_url = database_url.set(drivername='mysql+pymysql')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['LIBRARY_UPLOAD_FOLDER'] = os.environ.get(
     'LIBRARY_UPLOAD_FOLDER',

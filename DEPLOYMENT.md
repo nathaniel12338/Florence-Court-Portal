@@ -7,8 +7,9 @@ a Gunicorn Procfile, a dependency manifest, a database health endpoint
 ## Required before starting a production instance
 
 1. Create a Railway project with a Python web service and a MySQL service.
-   Railway will install `requirements.txt`; the current PDF result lookup
-   uses PyPDF2. If PDF
+   Railway will install `requirements.txt`; MySQL uses the pure-Python PyMySQL
+   driver and does not require system MySQL build libraries. The current PDF
+   result lookup uses PyPDF2. If PDF
    generation is added, install and configure `wkhtmltopdf` separately.
 2. Set every variable listed in `.env.example` as a private host secret.
    `APP_ENV` must be `production`; production startup will reject a missing
