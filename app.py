@@ -90,7 +90,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
     os.environ.get('DATABASE_URL') or app.config['SQLALCHEMY_DATABASE_URI']
 )
 database_url = make_url(app.config['SQLALCHEMY_DATABASE_URI'])
-if database_url.drivername == 'mysql':
+if database_url.drivername in {'mysql', 'mysql+mysqldb'}:
     database_url = database_url.set(drivername='mysql+pymysql')
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
