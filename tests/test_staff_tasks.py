@@ -1164,9 +1164,18 @@ class StaffTaskFlowTests(unittest.TestCase):
             db.session.commit()
 
         anonymous_client = app.test_client()
+        response = anonymous_client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            '© 2025 Florence Court Schools. All rights reserved.'.encode('utf-8'),
+            response.data,
+        )
+        self.assertNotIn('© 2026 Florence Court Schools'.encode('utf-8'), response.data)
+
         response = anonymous_client.get('/studentlogin')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Your school life, all in one place.', response.data)
+        self.assertIn('© 2025 Florence Court International Schools'.encode('utf-8'), response.data)
         self.assertIn(b'name="admission_id"', response.data)
 
         student_client = app.test_client()
@@ -1178,6 +1187,7 @@ class StaffTaskFlowTests(unittest.TestCase):
         response = student_client.get('/dashboard')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Welcome back, Ada!', response.data)
+        self.assertIn('© 2025 Florence Court International Schools'.encode('utf-8'), response.data)
         self.assertIn(b'JSS 1', response.data)
         self.assertIn(b'2026/2027', response.data)
         self.assertIn(b'Tuition', response.data)
