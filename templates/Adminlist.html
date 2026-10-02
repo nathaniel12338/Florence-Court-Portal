@@ -32,7 +32,7 @@
                     <div><dt>Documents</dt><dd>
                         <a href="{{ url_for('uploaded_file', filename=user.birth_certificate) }}" target="_blank" rel="noopener">Birth certificate</a> ·
                         <a href="{{ url_for('uploaded_file', filename=user.recent_result) }}" target="_blank" rel="noopener">School result</a> ·
-                        <a href="{{ url_for('uploaded_file', filename=user.payment_evidence) }}" target="_blank" rel="noopener">Payment evidence</a>
+                        {% if user.payment_evidence %} · <a href="{{ url_for('uploaded_file', filename=user.payment_evidence) }}" target="_blank" rel="noopener">Payment evidence</a>{% endif %}
                     </dd></div>
                 </dl>
                 <form class="accept-form" action="{{ url_for('Adminlist') }}" method="post">

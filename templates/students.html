@@ -81,7 +81,7 @@
                                 <div><dt>Guardian</dt><dd>{{ student.guardian_name }}</dd></div>
                                 <div><dt>Birth certificate</dt><dd><a href="{{ url_for('uploaded_file', filename=student.birth_certificate) }}" target="_blank" rel="noopener">Open document</a></dd></div>
                                 <div><dt>Previous result</dt><dd><a href="{{ url_for('uploaded_file', filename=student.recent_result) }}" target="_blank" rel="noopener">Open document</a></dd></div>
-                                <div><dt>Payment evidence</dt><dd><a href="{{ url_for('uploaded_file', filename=student.payment_evidence) }}" target="_blank" rel="noopener">Open document</a></dd></div>
+                                {% if student.payment_evidence %}<div><dt>Payment evidence</dt><dd><a href="{{ url_for('uploaded_file', filename=student.payment_evidence) }}" target="_blank" rel="noopener">Open document</a></dd></div>{% endif %}
                             </dl>
                         </details>
                     </td>

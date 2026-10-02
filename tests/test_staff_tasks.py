@@ -398,6 +398,7 @@ class StaffTaskFlowTests(unittest.TestCase):
         current_session = f'{date.today().year}/{date.today().year + 1}'
         self.assertIn(f'<option value="{current_session}"'.encode(), response.data)
         self.assertNotIn(b'name="entry_session" type="text"', response.data)
+        self.assertNotIn(b'name="payment_evidence"', response.data)
 
     def test_admission_form_rejects_invalid_state_or_gender(self):
         response = app.test_client().post(
@@ -1751,7 +1752,6 @@ class StaffTaskFlowTests(unittest.TestCase):
             'guardian_name': 'Parent Name',
             'birth_certificate': (io.BytesIO(b'birth document'), 'birth.pdf'),
             'recent_result': (io.BytesIO(b'result document'), 'result.pdf'),
-            'payment_evidence': (io.BytesIO(b'payment document'), 'payment.pdf'),
         }
         with tempfile.TemporaryDirectory() as upload_dir:
             with patch.dict(app.config, {'UPLOAD_FOLDER': upload_dir}):
@@ -1765,7 +1765,9 @@ class StaffTaskFlowTests(unittest.TestCase):
         self.assertEqual(self.email_mock.call_args.args[0], 'ada.application@example.com')
         self.assertIn('awaiting review', self.email_mock.call_args.args[2])
         with app.app_context():
-            self.assertIsNotNone(portal.query.filter_by(email='ada.application@example.com').first())
+            application = portal.query.filter_by(email='ada.application@example.com').first()
+            self.assertIsNotNone(application)
+            self.assertEqual(application.payment_evidence, '')
 
     def test_email_sender_uses_configured_ssl_and_sends_html_and_plain_text(self):
         app.config.update(

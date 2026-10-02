@@ -3628,9 +3628,8 @@ def apply():
             # Handle file uploads
             birth_certificate_file = request.files['birth_certificate']
             recent_result_file = request.files['recent_result']
-            payment_evidence_file = request.files['payment_evidence']
 
-            if not (birth_certificate_file and recent_result_file and payment_evidence_file):
+            if not (birth_certificate_file and recent_result_file):
                 return render_template(
                     'apply.html',
                     error_message="All files are required.",
@@ -3641,7 +3640,7 @@ def apply():
                 )
 
             # Check if files are allowed
-            if not (allowed_file(birth_certificate_file.filename) and allowed_file(recent_result_file.filename) and allowed_file(payment_evidence_file.filename)):
+            if not (allowed_file(birth_certificate_file.filename) and allowed_file(recent_result_file.filename)):
                 return render_template(
                     'apply.html',
                     error_message="File type not allowed.",
@@ -3654,19 +3653,16 @@ def apply():
             # Secure filenames
             birth_certificate_filename = secure_filename(birth_certificate_file.filename)
             recent_result_filename = secure_filename(recent_result_file.filename)
-            payment_evidence_filename = secure_filename(payment_evidence_file.filename)
 
             # Save files
             birth_certificate_path = os.path.join(app.config['UPLOAD_FOLDER'], birth_certificate_filename)
             recent_result_path = os.path.join(app.config['UPLOAD_FOLDER'], recent_result_filename)
-            payment_evidence_path = os.path.join(app.config['UPLOAD_FOLDER'], payment_evidence_filename)
 
             birth_certificate_file.save(birth_certificate_path)
             recent_result_file.save(recent_result_path)
-            payment_evidence_file.save(payment_evidence_path)
 
             # Insert the new user into the database
-            new_user = portal(username=username, email=email, firstName=firstName, lastName=lastName,   dob=dob, gender=gender, birth_certificate=birth_certificate_filename, recent_result=recent_result_filename, payment_evidence=payment_evidence_filename, state_origin=state_origin, entry_class=entry_class, entry_session=entry_session, phone_number=phone_number, address=address, admission_id=admission_id, guardian_name=guardian_name)
+            new_user = portal(username=username, email=email, firstName=firstName, lastName=lastName, dob=dob, gender=gender, birth_certificate=birth_certificate_filename, recent_result=recent_result_filename, payment_evidence='', state_origin=state_origin, entry_class=entry_class, entry_session=entry_session, phone_number=phone_number, address=address, admission_id=admission_id, guardian_name=guardian_name)
             db.session.add(new_user)
             db.session.commit()
 
