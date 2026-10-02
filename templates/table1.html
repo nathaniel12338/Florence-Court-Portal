@@ -72,7 +72,7 @@
         <fieldset class="class-assignment-choices">
             <legend>Classes for this teacher and subject</legend>
             <div class="class-assignment-grid">
-                {% for class_key, class_label in [('jss1', 'JSS 1'), ('jss2', 'JSS 2'), ('jss3', 'JSS 3'), ('sss1', 'SSS 1'), ('sss2', 'SSS 2')] %}
+                {% for class_key, class_label in school_classes.items() %}
                 <label><input type="checkbox" name="classes[]" value="{{ class_key }}"><span>{{ class_label }}</span></label>
                 {% endfor %}
             </div>
@@ -85,7 +85,7 @@
     <div class="admin-panel-heading"><div><h2>Add individual timetable lessons</h2><p class="admin-muted">Use this when each lesson needs a different subject, teacher, date or time.</p></div></div>
     <form class="admin-form" method="post" action="{{ url_for('table1') }}">
         <div class="admin-grid">
-            <div><label for="class-select">Class</label><select id="class-select" name="classe" required><option value="">Select class</option><option value="jss1">JSS 1</option><option value="jss2">JSS 2</option><option value="jss3">JSS 3</option><option value="sss1">SSS 1</option><option value="sss2">SSS 2</option></select></div>
+            <div><label for="class-select">Class</label><select id="class-select" name="classe" required><option value="">Select class</option>{% for class_key, class_label in school_classes.items() %}<option value="{{ class_key }}">{{ class_label }}</option>{% endfor %}</select></div>
             <div><label for="term-select">Term</label><select id="term-select" name="term" required><option value="">Select term</option><option value="first">First term</option><option value="second">Second term</option><option value="third">Third term</option></select></div>
         </div>
         <div class="admin-table-wrap">

@@ -22,6 +22,9 @@ from app import (
     ResultApproval,
     Staff,
     StaffTask,
+    SCHOOL_CLASSES,
+    TIMETABLE_CLASS_NAMES,
+    TIMETABLES,
     admitted,
     app,
     bcrypt,
@@ -116,7 +119,7 @@ class StaffTaskFlowTests(unittest.TestCase):
         response = admin.post(
             '/table1',
             data={
-                'classe': 'jss1',
+                'classe': 'grade7a',
                 'term': 'first',
                 'subject[]': ['Science'],
                 'techername[]': ['Ada Teacher'],
@@ -126,7 +129,7 @@ class StaffTaskFlowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
-            lesson = Jss1.query.one()
+            lesson = TIMETABLES['grade7a'].query.one()
             self.assertEqual(lesson.date.isoformat(), '2026-10-15')
             self.assertEqual(lesson.time.strftime('%H:%M'), '09:30')
 
@@ -399,6 +402,11 @@ class StaffTaskFlowTests(unittest.TestCase):
         self.assertIn(f'<option value="{current_session}"'.encode(), response.data)
         self.assertNotIn(b'name="entry_session" type="text"', response.data)
         self.assertNotIn(b'name="payment_evidence"', response.data)
+        for grade in range(7, 13):
+            for section in ('A', 'B'):
+                self.assertIn(f'<option value="Grade {grade}{section}">'.encode(), response.data)
+        self.assertNotIn(b'<option value="JSS 1">', response.data)
+        self.assertNotIn(b'<option value="Basic 7">', response.data)
 
     def test_admission_form_rejects_invalid_state_or_gender(self):
         response = app.test_client().post(
@@ -422,6 +430,32 @@ class StaffTaskFlowTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Select a valid state of origin and gender.', response.data)
+
+    def test_admission_rejects_legacy_class_names(self):
+        response = app.test_client().post(
+            '/apply',
+            data={
+                'username': 'student',
+                'firstName': 'Ada',
+                'lastName': 'Student',
+                'email': 'ada.invalid-class@example.com',
+                'dob': '2015-01-01',
+                'state_origin': 'Lagos',
+                'gender': 'F',
+                'entry_class': 'JSS 1',
+                'entry_session': f'{date.today().year}/{date.today().year + 1}',
+                'phone_number': '08000000000',
+                'address': 'School Road',
+                'admission_id': '54321',
+                'guardian_name': 'Parent Name',
+                'birth_certificate': (io.BytesIO(b'birth document'), 'birth.pdf'),
+                'recent_result': (io.BytesIO(b'result document'), 'result.pdf'),
+            },
+            content_type='multipart/form-data',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Select a valid class of entry.', response.data)
 
     def test_admission_form_rejects_unlisted_session_and_keeps_dropdown(self):
         response = app.test_client().post(
@@ -708,8 +742,8 @@ class StaffTaskFlowTests(unittest.TestCase):
                 date=date(2026, 10, 15),
                 time=time(9, 30),
             ))
-            db.session.add(Jss2(
-                classe='JSS 2',
+            db.session.add(TIMETABLES['grade7b'](
+                classe='Grade 7B',
                 term='first',
                 subject='Science',
                 techername='Ada Teacher',
@@ -745,7 +779,7 @@ class StaffTaskFlowTests(unittest.TestCase):
 
         response = admin_client.post(
             f'/students/{student_id}/class',
-            data={'entry_class': 'JSS 2'},
+            data={'entry_class': 'Grade 7B'},
         )
         self.assertEqual(response.status_code, 302)
         response = admin_client.post(
@@ -755,7 +789,7 @@ class StaffTaskFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         with app.app_context():
             student = db.session.get(admitted, student_id)
-            self.assertEqual(student.entry_class, 'JSS 2')
+            self.assertEqual(student.entry_class, 'Grade 7B')
             invoice = db.session.get(FeeInvoice, invoice_id)
             self.assertEqual(invoice.class_name, 'JSS 1')
 
@@ -765,7 +799,7 @@ class StaffTaskFlowTests(unittest.TestCase):
             data={'admin_id': 'STAFF-TRANSFER', 'password': 'teacher-pass-1'},
         )
         response = teacher_client.get(
-            '/staff/results?class=jss2&term=first&subject=Science'
+            '/staff/results?class=grade7b&term=first&subject=Science'
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Ada Applicant', response.data)
@@ -896,14 +930,14 @@ class StaffTaskFlowTests(unittest.TestCase):
             '/students/move-class',
             data={
                 'source_class': 'JSS 1',
-                'entry_class': 'JSS 2',
+                'entry_class': 'Grade 7B',
                 'student_ids': [str(ada_id), str(ben_id)],
             },
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
-            self.assertEqual(db.session.get(admitted, ada_id).entry_class, 'JSS 2')
-            self.assertEqual(db.session.get(admitted, ben_id).entry_class, 'JSS 2')
+            self.assertEqual(db.session.get(admitted, ada_id).entry_class, 'Grade 7B')
+            self.assertEqual(db.session.get(admitted, ben_id).entry_class, 'Grade 7B')
             self.assertEqual(db.session.get(admitted, cy_id).entry_class, 'JSS 2')
 
         response = admin_client.post(
@@ -916,20 +950,20 @@ class StaffTaskFlowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
-            self.assertEqual(db.session.get(admitted, ada_id).entry_class, 'JSS 2')
+            self.assertEqual(db.session.get(admitted, ada_id).entry_class, 'Grade 7B')
 
-    def test_admin_can_graduate_all_sss3_students_and_keep_read_only_portal_access(self):
+    def test_admin_can_graduate_all_grade12_sections_and_keep_read_only_portal_access(self):
         with app.app_context():
             graduating_students = [
                 self.create_admitted_student(
-                    'Ada', 'ada.graduate@example.com', '43001', 'SSS 3'
+                    'Ada', 'ada.graduate@example.com', '43001', 'Grade 12A'
                 ),
                 self.create_admitted_student(
-                    'Ben', 'ben.graduate@example.com', '43002', 'SSS 3'
+                    'Ben', 'ben.graduate@example.com', '43002', 'Grade 12B'
                 ),
             ]
             continuing_student = self.create_admitted_student(
-                'Cy', 'cy.graduate@example.com', '43003', 'SSS 2'
+                'Cy', 'cy.graduate@example.com', '43003', 'Grade 11B'
             )
             db.session.commit()
             graduating_ids = [student.id for student in graduating_students]
@@ -941,8 +975,8 @@ class StaffTaskFlowTests(unittest.TestCase):
             data={'admin_id': '2025', 'password': 'victor1'},
         )
         roster = admin_client.get('/students')
-        self.assertIn(b'Graduate all SSS 3 students', roster.data)
-        self.assertIn(b'2 active SSS 3 students ready to graduate', roster.data)
+        self.assertIn(b'Graduate all Grade 12 students', roster.data)
+        self.assertIn(b'2 active Grade 12 / legacy SSS 3 students ready to graduate', roster.data)
 
         response = admin_client.post('/students/graduate-sss3')
         self.assertEqual(response.status_code, 302)
@@ -953,7 +987,7 @@ class StaffTaskFlowTests(unittest.TestCase):
             ))
             continuing = db.session.get(admitted, continuing_id)
             self.assertFalse(continuing.is_graduated)
-            self.assertEqual(continuing.entry_class, 'SSS 2')
+            self.assertEqual(continuing.entry_class, 'Grade 11B')
 
         roster = admin_client.get('/students')
         self.assertIn(b'Graduated', roster.data)
@@ -985,13 +1019,13 @@ class StaffTaskFlowTests(unittest.TestCase):
 
         blocked_move = admin_client.post(
             f'/students/{graduating_ids[0]}/class',
-            data={'entry_class': 'SSS 2'},
+            data={'entry_class': 'Grade 11B'},
         )
         self.assertEqual(blocked_move.status_code, 302)
         with app.app_context():
             self.assertEqual(
                 db.session.get(admitted, graduating_ids[0]).entry_class,
-                'SSS 3',
+                'Grade 12A',
             )
 
     def test_admin_can_assign_one_teacher_and_subject_to_multiple_classes(self):
@@ -1013,7 +1047,7 @@ class StaffTaskFlowTests(unittest.TestCase):
             '/table1',
             data={
                 'action': 'assign_multiple_classes',
-                'classes[]': ['jss1', 'jss2'],
+                'classes[]': ['grade7a', 'grade7b'],
                 'term': 'second',
                 'subject': 'Mathematics',
                 'teacher': 'Morgan Teacher',
@@ -1023,16 +1057,16 @@ class StaffTaskFlowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
-            jss1_lesson = Jss1.query.one()
-            jss2_lesson = Jss2.query.one()
-            self.assertEqual(jss1_lesson.classe, 'JSS 1')
-            self.assertEqual(jss2_lesson.classe, 'JSS 2')
-            self.assertEqual(jss1_lesson.subject, 'Mathematics')
-            self.assertEqual(jss2_lesson.subject, 'Mathematics')
-            self.assertEqual(jss1_lesson.techername, 'Morgan Teacher')
-            self.assertEqual(jss2_lesson.techername, 'Morgan Teacher')
-            self.assertEqual(jss1_lesson.term, 'second')
-            self.assertEqual(jss2_lesson.term, 'second')
+            grade7a_lesson = TIMETABLES['grade7a'].query.one()
+            grade7b_lesson = TIMETABLES['grade7b'].query.one()
+            self.assertEqual(grade7a_lesson.classe, 'Grade 7A')
+            self.assertEqual(grade7b_lesson.classe, 'Grade 7B')
+            self.assertEqual(grade7a_lesson.subject, 'Mathematics')
+            self.assertEqual(grade7b_lesson.subject, 'Mathematics')
+            self.assertEqual(grade7a_lesson.techername, 'Morgan Teacher')
+            self.assertEqual(grade7b_lesson.techername, 'Morgan Teacher')
+            self.assertEqual(grade7a_lesson.term, 'second')
+            self.assertEqual(grade7b_lesson.term, 'second')
 
         teacher_client = app.test_client()
         teacher_client.post(
@@ -1041,15 +1075,15 @@ class StaffTaskFlowTests(unittest.TestCase):
         )
         response = teacher_client.get('/staff/results')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'JSS 1', response.data)
-        self.assertIn(b'JSS 2', response.data)
+        self.assertIn(b'Grade 7A', response.data)
+        self.assertIn(b'Grade 7B', response.data)
         self.assertIn(b'Mathematics', response.data)
 
         response = admin_client.post(
             '/table1',
             data={
                 'action': 'assign_multiple_classes',
-                'classes[]': ['jss1', 'unknown'],
+                'classes[]': ['grade7a', 'unknown'],
                 'term': 'second',
                 'subject': 'Science',
                 'teacher': 'Morgan Teacher',
@@ -1059,8 +1093,50 @@ class StaffTaskFlowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
-            self.assertEqual(Jss1.query.count(), 1)
-            self.assertEqual(Jss2.query.count(), 1)
+            self.assertEqual(TIMETABLES['grade7a'].query.count(), 1)
+            self.assertEqual(TIMETABLES['grade7b'].query.count(), 1)
+
+        response = admin_client.post(
+            '/table1',
+            data={
+                'action': 'assign_multiple_classes',
+                'classes[]': ['grade7a', 'grade7b'],
+                'term': 'third',
+                'subject': 'English',
+                'teacher': 'Morgan Teacher',
+                'date': '2026-11-03',
+                'time': '10:30',
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        with app.app_context():
+            grade7a = TIMETABLES['grade7a'].query.filter_by(subject='English').one()
+            grade7b = TIMETABLES['grade7b'].query.filter_by(subject='English').one()
+            self.assertEqual(grade7a.classe, 'Grade 7A')
+            self.assertEqual(grade7b.classe, 'Grade 7B')
+        response = teacher_client.get('/staff/results')
+        self.assertIn(b'Grade 7A', response.data)
+        self.assertIn(b'Grade 7B', response.data)
+
+    def test_each_grade_section_has_an_independent_timetable_model(self):
+        expected_grade_classes = [
+            f'Grade {grade}{section}'
+            for grade in range(7, 13)
+            for section in ('A', 'B')
+        ]
+        self.assertEqual(
+            [class_name for class_name in SCHOOL_CLASSES if class_name.startswith('Grade ')],
+            expected_grade_classes,
+        )
+        self.assertEqual(list(TIMETABLE_CLASS_NAMES.values()), expected_grade_classes)
+        for grade in range(7, 13):
+            for section in ('a', 'b'):
+                class_key = f'grade{grade}{section}'
+                self.assertIn(class_key, TIMETABLES)
+                self.assertEqual(
+                    TIMETABLE_CLASS_NAMES[class_key],
+                    f'Grade {grade}{section.upper()}',
+                )
 
     def test_student_portal_login_dashboard_and_invoice_pages_render(self):
         with app.app_context():
@@ -1316,10 +1392,10 @@ class StaffTaskFlowTests(unittest.TestCase):
     def test_staff_uploads_class_scoped_pdf_and_students_download_only_their_class(self):
         with app.app_context():
             self.create_admitted_student(
-                'Ada', 'ada.library@example.com', '43001', 'JSS 1'
+                'Ada', 'ada.library@example.com', '43001', 'Grade 7A'
             )
             self.create_admitted_student(
-                'Ben', 'ben.library@example.com', '43002', 'JSS 2'
+                'Ben', 'ben.library@example.com', '43002', 'Grade 7B'
             )
             teacher = Staff(
                 staff_id='STAFF-LIBRARY',
@@ -1342,12 +1418,12 @@ class StaffTaskFlowTests(unittest.TestCase):
                 response = teacher_client.get('/staff/library')
                 self.assertEqual(response.status_code, 200)
                 self.assertIn(b'Upload PDF for a class', response.data)
-                self.assertIn(b'JSS 1', response.data)
+                self.assertIn(b'Grade 7A', response.data)
 
                 response = teacher_client.post(
                     '/staff/library',
                     data={
-                        'class_name': 'JSS 1',
+                        'class_name': 'Grade 7A',
                         'course_title': 'Mathematics — Fractions',
                         'description': 'Practice these examples.',
                         'pdf': (io.BytesIO(b'%PDF-1.4\nsample pdf content'), 'lesson.pdf'),
@@ -1357,7 +1433,7 @@ class StaffTaskFlowTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 302)
                 with app.app_context():
                     resource = LibraryResource.query.one()
-                    self.assertEqual(resource.class_name, 'JSS 1')
+                    self.assertEqual(resource.class_name, 'Grade 7A')
                     self.assertEqual(resource.course_title, 'Mathematics — Fractions')
                     resource_id = resource.id
                     stored_file = os.path.join(library_folder, resource.filename)
@@ -1400,7 +1476,7 @@ class StaffTaskFlowTests(unittest.TestCase):
                 response = teacher_client.post(
                     '/staff/library',
                     data={
-                        'class_name': 'JSS 2',
+                        'class_name': 'Grade 7B',
                         'course_title': 'Not a PDF',
                         'pdf': (io.BytesIO(b'this is not a PDF'), 'document.pdf'),
                     },
@@ -1707,16 +1783,16 @@ class StaffTaskFlowTests(unittest.TestCase):
                 'teacher': 'Ada Teacher',
                 'term': 'first',
                 'course_id[]': [str(mathematics_id), str(science_id)],
-                'classe[]': ['jss1', 'jss2'],
+                'classe[]': ['grade7a', 'grade7b'],
                 'date[]': ['2026-11-02', '2026-11-03'],
                 'time[]': ['09:00', '10:00'],
             },
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
-            self.assertEqual(Jss1.query.one().subject, 'Mathematics')
-            self.assertEqual(Jss1.query.one().techername, 'Ada Teacher')
-            self.assertEqual(Jss2.query.one().subject, 'Science')
+            self.assertEqual(TIMETABLES['grade7a'].query.one().subject, 'Mathematics')
+            self.assertEqual(TIMETABLES['grade7a'].query.one().techername, 'Ada Teacher')
+            self.assertEqual(TIMETABLES['grade7b'].query.one().subject, 'Science')
 
         response = admin_client.post(
             '/admin/courses',
@@ -1744,7 +1820,7 @@ class StaffTaskFlowTests(unittest.TestCase):
             'dob': '2015-01-01',
             'state_origin': 'Lagos',
             'gender': 'F',
-            'entry_class': 'JSS 1',
+            'entry_class': 'Grade 7A',
             'entry_session': session_name,
             'phone_number': '08000000000',
             'address': 'School Road',
@@ -2348,13 +2424,13 @@ class StaffTaskFlowTests(unittest.TestCase):
     def test_moving_student_into_class_immediately_adds_existing_class_invoices(self):
         with app.app_context():
             existing_student = self.create_admitted_student(
-                'Ada', 'ada.existing-class-invoice@example.com', '45004', 'JSS 1'
+                'Ada', 'ada.existing-class-invoice@example.com', '45004', 'Grade 7A'
             )
             moved_student = self.create_admitted_student(
-                'Ben', 'ben.moved-class-invoice@example.com', '45005', 'JSS 2'
+                'Ben', 'ben.moved-class-invoice@example.com', '45005', 'Grade 7B'
             )
             db.session.add(FeeSchedule(
-                class_name='JSS 1',
+                class_name='Grade 7A',
                 fee_type='Class tuition',
                 amount=Decimal('125000.00'),
             ))
@@ -2371,7 +2447,7 @@ class StaffTaskFlowTests(unittest.TestCase):
             '/fees',
             data={
                 'action': 'issue_class_invoices',
-                'class_name': 'JSS 1',
+                'class_name': 'Grade 7A',
                 'schedule_id': str(schedule_id),
                 'description': 'Already issued JSS 1 fee',
             },
@@ -2380,7 +2456,7 @@ class StaffTaskFlowTests(unittest.TestCase):
 
         response = admin.post(
             f'/students/{moved_student_id}/class',
-            data={'entry_class': 'JSS 1'},
+            data={'entry_class': 'Grade 7A'},
         )
         self.assertEqual(response.status_code, 302)
         with app.app_context():
@@ -2456,7 +2532,7 @@ class StaffTaskFlowTests(unittest.TestCase):
             '/fees',
             data={
                 'action': 'issue_class_invoices',
-                'class_name': 'JSS 2',
+                'class_name': 'Grade 7B',
                 'schedule_id': str(schedule_id),
             },
         )

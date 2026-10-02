@@ -251,6 +251,35 @@ TIMETABLES = {
     'sss2': Sss2,
 }
 
+TIMETABLE_CLASS_NAMES = {}
+
+
+def create_grade_timetable_model(class_key):
+    grade = class_key[5:-1]
+    section = class_key[-1]
+    return type(
+        f'Grade{grade}{section.upper()}Timetable',
+        (db.Model,),
+        {
+            '__tablename__': f'timetable_grade_{grade}_{section}',
+            'id': db.Column(db.Integer, primary_key=True, autoincrement=True),
+            'classe': db.Column(db.String(100), nullable=False),
+            'term': db.Column(db.String(100), nullable=False),
+            'subject': db.Column(db.String(100), nullable=False),
+            'techername': db.Column(db.String(100), nullable=False),
+            'date': db.Column(db.Date, nullable=False),
+            'time': db.Column(db.Time, nullable=False),
+        },
+    )
+
+
+for grade in range(7, 13):
+    for section in ('a', 'b'):
+        class_key = f'grade{grade}{section}'
+        class_name = f'Grade {grade}{section.upper()}'
+        TIMETABLE_CLASS_NAMES[class_key] = class_name
+        TIMETABLES[class_key] = create_grade_timetable_model(class_key)
+
 SCHOOL_CLASSES = (
     'Play Group',
     'Pre School',
@@ -263,16 +292,11 @@ SCHOOL_CLASSES = (
     'Basic 4',
     'Basic 5',
     'Basic 6',
-    'Basic 7',
-    'Basic 8',
-    'Basic 9',
-    'JSS 1',
-    'JSS 2',
-    'JSS 3',
-    'SSS 1',
-    'SSS 2',
-    'SSS 3',
+    *(TIMETABLE_CLASS_NAMES[f'grade{grade}{section}']
+      for grade in range(7, 13)
+      for section in ('a', 'b')),
 )
+app.jinja_env.globals['SCHOOL_CLASSES'] = SCHOOL_CLASSES
 
 
 class Staff(db.Model):
@@ -1256,8 +1280,14 @@ def student_management():
     students = admitted.query.order_by(
         admitted.entry_class, admitted.firstName, admitted.lastName
     ).all()
+    current_classes = sorted(
+        set(SCHOOL_CLASSES) | {student.entry_class for student in students},
+        key=str.casefold,
+    )
     graduatable_students = sum(
-        normalize_class_name(student.entry_class) == normalize_class_name('SSS 3')
+        normalize_class_name(student.entry_class) in {
+            'sss3', 'grade12a', 'grade12b',
+        }
         and not student.is_graduated
         for student in students
     )
@@ -1266,6 +1296,7 @@ def student_management():
         students=students,
         graduatable_students=graduatable_students,
         classes=SCHOOL_CLASSES,
+        current_classes=current_classes,
         student_class_keys={
             student.id: normalize_class_name(student.entry_class)
             for student in students
@@ -1332,8 +1363,14 @@ def move_students_class():
     source_class = (request.form.get('source_class') or '').strip()
     target_class = (request.form.get('entry_class') or '').strip()
     student_ids = request.form.getlist('student_ids')
+    existing_classes = {
+        student.entry_class for student in admitted.query.with_entities(
+            admitted.entry_class
+        ).distinct().all()
+    }
+    selectable_source_classes = set(SCHOOL_CLASSES) | existing_classes
     source_class_option = next(
-        (class_name for class_name in SCHOOL_CLASSES
+        (class_name for class_name in selectable_source_classes
          if class_name.casefold() == source_class.casefold()),
         None,
     )
@@ -1414,10 +1451,12 @@ def graduate_sss3_students():
     students = admitted.query.filter_by(is_graduated=False).all()
     graduating_students = [
         student for student in students
-        if normalize_class_name(student.entry_class) == normalize_class_name('SSS 3')
+        if normalize_class_name(student.entry_class) in {
+            'sss3', 'grade12a', 'grade12b',
+        }
     ]
     if not graduating_students:
-        flash('There are no active SSS 3 students to graduate.', 'warning')
+        flash('There are no active Grade 12 or legacy SSS 3 students to graduate.', 'warning')
         return redirect(url_for('student_management'))
 
     for student in graduating_students:
@@ -1426,11 +1465,11 @@ def graduate_sss3_students():
         db.session.commit()
     except SQLAlchemyError:
         db.session.rollback()
-        app.logger.exception('Could not graduate SSS 3 students')
-        flash('The SSS 3 students could not be graduated. Please try again.', 'error')
+        app.logger.exception('Could not graduate final-year students')
+        flash('The final-year students could not be graduated. Please try again.', 'error')
     else:
         flash(
-            f'{len(graduating_students)} SSS 3 student'
+            f'{len(graduating_students)} final-year student'
             f'{"s" if len(graduating_students) != 1 else ""} marked as graduated. '
             'Their records and read-only portal access have been retained.',
             'success',
@@ -2233,26 +2272,14 @@ def staff_management():
         staff_course_assignments=staff_course_assignments,
         student_portal_enabled=portal_is_enabled('student'),
         staff_portal_enabled=portal_is_enabled('staff'),
-        timetable_classes={
-            'jss1': 'JSS 1',
-            'jss2': 'JSS 2',
-            'jss3': 'JSS 3',
-            'sss1': 'SSS 1',
-            'sss2': 'SSS 2',
-        },
+        timetable_classes=TIMETABLE_CLASS_NAMES,
     )
 
 
 @app.route('/admin/courses', methods=['GET', 'POST'])
 @admin_required
 def course_management():
-    class_names = {
-        'jss1': 'JSS 1',
-        'jss2': 'JSS 2',
-        'jss3': 'JSS 3',
-        'sss1': 'SSS 1',
-        'sss2': 'SSS 2',
-    }
+    class_names = TIMETABLE_CLASS_NAMES
     if request.method == 'POST':
         action = (request.form.get('action') or '').strip()
         if action == 'add':
@@ -2322,7 +2349,7 @@ def course_management():
                 or len(rows) != len(lesson_times)
                 or any(
                     not course_id.isdigit()
-                    or class_key not in TIMETABLES
+                    or class_key not in TIMETABLE_CLASS_NAMES
                     or not lesson_date
                     or not lesson_time
                     for course_id, class_key, lesson_date, lesson_time in rows
@@ -2677,7 +2704,7 @@ def table1():
             if (
                 not class_keys
                 or len(set(class_keys)) != len(class_keys)
-                or any(class_key not in TIMETABLES for class_key in class_keys)
+                or any(class_key not in TIMETABLE_CLASS_NAMES for class_key in class_keys)
                 or term not in {'first', 'second', 'third'}
                 or not subject
                 or len(subject) > 100
@@ -2695,16 +2722,9 @@ def table1():
                 flash('Enter a valid lesson date and time.', 'error')
                 return redirect(url_for('table1'))
 
-            class_names = {
-                'jss1': 'JSS 1',
-                'jss2': 'JSS 2',
-                'jss3': 'JSS 3',
-                'sss1': 'SSS 1',
-                'sss2': 'SSS 2',
-            }
             for class_key in class_keys:
                 db.session.add(TIMETABLES[class_key](
-                    classe=class_names[class_key],
+                    classe=TIMETABLE_CLASS_NAMES[class_key],
                     term=term,
                     subject=subject,
                     techername=teacher,
@@ -2731,14 +2751,9 @@ def table1():
         dates = request.form.getlist('date[]')
         times = request.form.getlist('time[]')
 
-        table_map = {
-            'jss1': Jss1,
-            'jss2': Jss2,
-            'jss3': Jss3,
-            'sss1': Sss1,
-            'sss2': Sss2,
-        }
-        table_class = table_map.get(classe)
+        table_class = TIMETABLES.get(classe)
+        if classe not in TIMETABLE_CLASS_NAMES:
+            table_class = None
         if table_class is None or term not in {'first', 'second', 'third'}:
             flash('Select a valid class and term.', 'error')
             return redirect(url_for('table1'))
@@ -2767,7 +2782,7 @@ def table1():
                 subjects, teachers, dates, times
             ):
                 entry = table_class(
-                    classe=classe,
+                    classe=TIMETABLE_CLASS_NAMES[classe],
                     term=term,
                     subject=subject,
                     techername=teacher,
@@ -2788,16 +2803,10 @@ def table1():
         staff.full_name
         for staff in Staff.query.filter_by(is_active=True).order_by(Staff.full_name).all()
     ]
-    class_names = {
-        'jss1': 'JSS 1',
-        'jss2': 'JSS 2',
-        'jss3': 'JSS 3',
-        'sss1': 'SSS 1',
-        'sss2': 'SSS 2',
-    }
+    class_names = TIMETABLE_CLASS_NAMES
     selected_class = (request.args.get('class') or '').strip().lower()
     selected_term = (request.args.get('term') or 'first').strip().lower()
-    if selected_class not in TIMETABLES:
+    if selected_class not in TIMETABLE_CLASS_NAMES:
         selected_class = ''
     if selected_term not in {'first', 'second', 'third'}:
         selected_term = 'first'
@@ -3614,6 +3623,22 @@ def apply():
                     school_sessions=SCHOOL_SESSIONS,
                     selected_session='',
                 )
+
+            entry_class_option = next(
+                (class_name for class_name in SCHOOL_CLASSES
+                 if class_name.casefold() == (entry_class or '').casefold()),
+                None,
+            )
+            if entry_class_option is None:
+                return render_template(
+                    'apply.html',
+                    error_message='Select a valid class of entry.',
+                    numbers_str=numbers_str,
+                    states=NIGERIAN_STATES,
+                    school_sessions=SCHOOL_SESSIONS,
+                    selected_session=selected_session,
+                )
+            entry_class = entry_class_option
 
             if len(admission_id) != 5 or not admission_id.isdigit():
                 return render_template(

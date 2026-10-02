@@ -14,20 +14,20 @@
 </header>
 <section class="admin-panel">
     <div class="admin-panel-heading">
-        <div><h2>Admitted student roster</h2><p class="admin-muted">Move active students between classes or graduate the SSS 3 cohort when they complete secondary school.</p></div>
+        <div><h2>Admitted student roster</h2><p class="admin-muted">Move active students between classes or graduate Grade 12 students when they complete secondary school.</p></div>
         <input id="student-search" class="admin-search" type="search" placeholder="Search name, class, email or reference" aria-label="Search admitted students">
     </div>
     {% if students %}
-    <form class="graduate-cohort-toolbar" method="post" action="{{ url_for('graduate_sss3_students') }}" onsubmit="return confirm('Graduate all {{ graduatable_students }} active SSS 3 student(s)? They will keep read-only access to their student portal and school history.');">
-        <div><strong>Finish SSS 3</strong><small>{{ graduatable_students }} active SSS 3 student{{ '' if graduatable_students == 1 else 's' }} ready to graduate</small></div>
-        <button class="admin-button graduate-cohort-button" type="submit" {% if not graduatable_students %}disabled{% endif %}>Graduate all SSS 3 students</button>
+    <form class="graduate-cohort-toolbar" method="post" action="{{ url_for('graduate_sss3_students') }}" onsubmit="return confirm('Graduate all {{ graduatable_students }} active Grade 12 and legacy SSS 3 student(s)? They will keep read-only access to their student portal and school history.');">
+        <div><strong>Finish Grade 12</strong><small>{{ graduatable_students }} active Grade 12 / legacy SSS 3 student{{ '' if graduatable_students == 1 else 's' }} ready to graduate</small></div>
+        <button class="admin-button graduate-cohort-button" type="submit" {% if not graduatable_students %}disabled{% endif %}>Graduate all Grade 12 students</button>
     </form>
     <form class="bulk-move-toolbar" method="post" action="{{ url_for('move_students_class') }}" id="bulk-move-form">
         <div class="bulk-move-field">
             <label for="bulk-source-class">Current class</label>
             <select id="bulk-source-class" name="source_class" required>
                 <option value="">Filter by current class</option>
-                {% for class_name in classes %}<option value="{{ class_name }}">{{ class_name }}</option>{% endfor %}
+                {% for class_name in current_classes %}<option value="{{ class_name }}">{{ class_name }}</option>{% endfor %}
             </select>
         </div>
         <div class="bulk-selection-summary">
@@ -61,6 +61,7 @@
                         <form class="admin-form class-move-form" method="post" action="{{ url_for('move_student_class', student_id=student.id) }}">
                             <label class="sr-only" for="student-class-{{ student.id }}">Move {{ student.firstName }} to a class</label>
                             <select id="student-class-{{ student.id }}" name="entry_class" required>
+                                {% if student.entry_class not in classes %}<option value="{{ student.entry_class }}" selected>{{ student.entry_class }} (current legacy class)</option>{% endif %}
                                 {% for class_name in classes %}
                                 <option value="{{ class_name }}" {{ 'selected' if class_name == student.entry_class else '' }}>{{ class_name }}</option>
                                 {% endfor %}

@@ -92,23 +92,9 @@
                         <label for="entry_class">Class of entry <span>*</span></label>
                         <select id="entry_class" name="entry_class" required>
                             <option value="" disabled selected>Select class</option>
-                            <option value="Play Group">Play Group</option>
-                            <option value="Pre School">Pre School</option>
-                            <option value="KG 1">KG 1</option>
-                            <option value="KG 2">KG 2</option>
-                            <option value="KG 3">KG 3</option>
-                            <option value="Basic 1">Basic 1</option>
-                            <option value="Basic 2">Basic 2</option>
-                            <option value="Basic 3">Basic 3</option>
-                            <option value="Basic 4">Basic 4</option>
-                            <option value="Basic 5">Basic 5</option>
-                            <option value="Basic 6">Basic 6</option>
-                            <option value="Basic 7">Basic 7</option>
-                            <option value="Basic 8">Basic 8</option>
-                            <option value="Basic 9">Basic 9</option>
-                            <option value="SSS 1">SSS 1</option>
-                            <option value="SSS 2">SSS 2</option>
-                            <option value="SSS 3">SSS 3</option>
+                            {% for class_name in SCHOOL_CLASSES %}
+                            <option value="{{ class_name }}">{{ class_name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="field">
