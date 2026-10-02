@@ -806,6 +806,7 @@ button:focus-visible {
         right: 0;
         left: 0;
         display: none;
+        height: auto;
         align-items: stretch;
         gap: 0;
         padding: 8px 18px 18px;
